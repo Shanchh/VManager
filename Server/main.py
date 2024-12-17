@@ -5,6 +5,7 @@ import random
 import string
 from pydantic import BaseModel
 from setting import db
+import time
 
 app = FastAPI()
 # uvicorn main:app --host 127.0.0.1 --port 2666 --reload
@@ -34,45 +35,61 @@ async def login(request: LoginRequest):
         return JSONResponse(content={
             "status": "success",
             "clientId": clientId,
-            "VMword": user['VMword'],
-            "vmrun_path": user['vmrun_path'],
-            "vmx_path": user['vmx_path']
+            "VMword": user['VMword']
         })
     else:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
 @app.get("/list_connected")
 async def list_connected():
-    client_ids = list(connected_clients.keys())
-    return JSONResponse(content={"client_ids": client_ids})
+    clients_info = {}
+    for client_id, data in connected_clients.items():
+        client_data = data.copy()
+        client_data.pop('websocket', None)
+        clients_info[client_id] = client_data
+    
+    return JSONResponse(content={"connected_clients": clients_info})
 
 @app.post("/api")
 async def api(request: ApiRequest):
     method = request.method
     content = request.content
     
-    if method == "close_vmware_workstation":
+    command = {
+        "close_vmware_workstation": "close_vmware_workstation",
+        "restart_computer": "restart_computer",
+        "shutdown_computer": "shutdown_computer"
+    }
+
+    if method in command:
         client_id = content.get("clientId")
-        
+
         if client_id not in connected_clients:
             raise HTTPException(status_code=404, detail=f"裝置ID無效 [{client_id}]")
-        
+
         try:
-            websocket = connected_clients[client_id]
-            await websocket.send_text("close_vmware_workstation")
-            return JSONResponse(content={"status": "success", "message": f"close_vmware_workstation 已傳送至 {client_id}"})
+            websocket = connected_clients[client_id]['websocket']
+            await websocket.send_text(method)
+            return JSONResponse(content={"status": "success", "message": f"{method} 已傳送至 {client_id}"})
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"傳送 close_vmware_workstation 指令失敗: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"傳送 {method} 指令失敗: {str(e)}")
+
     else:
         raise HTTPException(status_code=400, detail="無效Method.")
 
 # WebSocket 端點
-@app.websocket("/websocket/{client_id}")
-async def websocket_endpoint(websocket: WebSocket, client_id: str):
+@app.websocket("/websocket/{client_id}/{account}/{username}")
+async def websocket_endpoint(websocket: WebSocket, client_id: str, account: str, username: str):
     # 接受 WebSocket 連接
     await websocket.accept()
-    print(f"Client {client_id} connected.")
-    connected_clients[client_id] = websocket
+    print(f"用戶 {client_id}[{username}/{account}] 已連線.")
+    connected_clients[client_id] = {
+        "client_id": client_id,
+        "websocket": websocket,
+        "account": account,
+        "username": username,
+        "connected_at": int(time.time())
+    }
 
     try:
         while True:
