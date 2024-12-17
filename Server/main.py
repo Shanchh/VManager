@@ -60,8 +60,22 @@ async def api(request: ApiRequest):
         "restart_computer": "restart_computer",
         "shutdown_computer": "shutdown_computer"
     }
+    
+    if method == "message":
+        username = content.get("username")
 
-    if method in command:
+        if username not in connected_clients:
+            raise HTTPException(status_code=404, detail=f"使用者ID無效 [{username}]")
+
+        try:
+            msg = content.get("msg")
+            websocket = connected_clients[username]['websocket']
+            await websocket.send_text(msg)
+            return JSONResponse(content={"status": "success", "message": f"{msg} 已傳送至 {username}"})
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"傳送 {method} 指令失敗: {str(e)}")
+
+    elif method in command:
         client_id = content.get("clientId")
 
         if client_id not in connected_clients:
@@ -78,15 +92,13 @@ async def api(request: ApiRequest):
         raise HTTPException(status_code=400, detail="無效Method.")
 
 # WebSocket 端點
-@app.websocket("/websocket/{client_id}/{account}/{username}")
-async def websocket_endpoint(websocket: WebSocket, client_id: str, account: str, username: str):
+@app.websocket("/websocket/{username}")
+async def websocket_endpoint(websocket: WebSocket, username: str):
     # 接受 WebSocket 連接
     await websocket.accept()
-    print(f"用戶 {client_id}[{username}/{account}] 已連線.")
-    connected_clients[client_id] = {
-        "client_id": client_id,
+    print(f"用戶 {username} 已連線.")
+    connected_clients[username] = {
         "websocket": websocket,
-        "account": account,
         "username": username,
         "connected_at": int(time.time())
     }
@@ -95,14 +107,14 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str, account: str,
         while True:
             # 接收消息
             message = await websocket.receive_text()
-            print(f"Received from {client_id}: {message}")
+            print(f"Received from {username}: {message}")
 
             # # 回傳回聲消息
             # await websocket.send_text(f"Echo: {message}")
     except WebSocketDisconnect:
-        print(f"Client {client_id} disconnected.")
+        print(f"Client {username} disconnected.")
     except Exception as e:
-        print(f"WebSocket error for {client_id}: {e}")
+        print(f"WebSocket error for {username}: {e}")
     finally:
         # 移除斷開的連接
-        connected_clients.pop(client_id, None)
+        connected_clients.pop(username, None)
