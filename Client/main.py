@@ -25,7 +25,8 @@ USER_NAME = config['setting']['user_name']
 VMRUN_PATH = config['setting']['vmrun_path'].replace('\\', '\\\\')
 VMX_PATH = config['setting']['vmx_path'].replace('\\', '\\\\')
 START_DELAY = int(config['setting']['start_delay'])
-SERVER_URL = "http://127.0.0.1:2666"
+SERVER_URL = config['setting']['server_ip']
+WEBSOCKET_URL = config['setting']['websocket_url']
 
 def get_now():
     return f"[{datetime.now().strftime('%H:%M:%S')}] "
@@ -112,8 +113,8 @@ class Client:
 
 async def listen_for_commands(clientId, account):
     try:
-        WEBSOCKET_URL = f"ws://127.0.0.1:2666/websocket/{clientId}/{account}/{USER_NAME}"
-        async with websockets.connect(WEBSOCKET_URL) as websocket:
+        url = f"{WEBSOCKET_URL}/websocket/{clientId}/{account}/{USER_NAME}"
+        async with websockets.connect(url) as websocket:
             print(f"{get_now()}成功連上WebSocket, 裝置名稱:[{clientId}]")
             await asyncio.sleep(10)
 
