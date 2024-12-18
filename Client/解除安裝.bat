@@ -10,10 +10,10 @@ if %errorlevel% neq 0 (
 :: 切換到腳本所在目錄
 cd /d "%~dp0"
 
-python test.py stop
+python service.py stop
 
 :: 安裝服務
-python test.py remove
+python service.py remove
 
 :: 提示完成
 echo Service installed and started successfully!

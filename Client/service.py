@@ -5,20 +5,20 @@ import win32event
 import time
 import configparser
 import os
-from datetime import datetime
 import threading
 import websocket
+from datetime import datetime
 
-config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
+import manage
+
+SERVICE_DISPLAY_NAME = "VManager監測 v1.0.1"
+
 log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'log.yml')
+config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
 config = configparser.ConfigParser()
 config.read(config_path, encoding='utf-8')
 
 USER_NAME = config['setting']['user_name']
-VMRUN_PATH = config['setting']['vmrun_path'].replace('\\', '\\\\')
-VMX_PATH = config['setting']['vmx_path'].replace('\\', '\\\\')
-START_DELAY = int(config['setting']['start_delay'])
-SERVER_URL = config['setting']['server_ip']
 WEBSOCKET_URL = config['setting']['websocket_url']
 
 def get_now():
@@ -38,6 +38,10 @@ class WebSocketClient:
 
     def connect(self):
         """建立 WebSocket 連接並設置回調函數"""
+        self.running = True
+        if self.ws and self.ws.sock and self.ws.sock.connected:
+            # write_log("已有 WebSocket 連線，跳過重連")
+            return
         try:
             write_log("正在嘗試連接 WebSocket...")
             ws_url = f"{WEBSOCKET_URL}/websocket/{USER_NAME}"
@@ -50,7 +54,7 @@ class WebSocketClient:
             )
             threading.Thread(target=self.ws.run_forever, daemon=True).start()
         except Exception as e:
-            write_log(f"連接WebSocket失敗: {e}")
+            write_log(f"連接 WebSocket 失敗: {e}")
             self.reconnect()
 
     def on_open(self, ws):
@@ -60,6 +64,20 @@ class WebSocketClient:
 
     def on_message(self, ws, message):
         write_log(f"收到消息: {message}")
+        if message == "close_vmware_workstation":
+            manage.close_vmware_workstation()
+            self.ws.send(f"{USER_NAME}: close_vmware_workstation 執行完畢")
+
+        if message == "restart_computer":
+            manage.restart_computer()
+            self.ws.send(f"{USER_NAME}: restart_computer 執行完畢")
+
+        if message == "shutdown_computer":
+            manage.shutdown_computer()
+            self.ws.send(f"{USER_NAME}: shutdown_computer 執行完畢")
+        
+        if message == "login_request":
+            pass
 
     def on_close(self, ws, close_status_code, close_msg):
         write_log("WebSocket 連接已關閉，5 秒後重新連接...")
@@ -75,7 +93,7 @@ class WebSocketClient:
         while self.running:
             try:
                 if self.ws and self.ws.sock and self.ws.sock.connected:
-                    heartbeat_msg = f'{{"type": "heartbeat", "user": "{USER_NAME}", "timestamp": "{datetime.now().isoformat()}"}}'
+                    heartbeat_msg = f'{{"type": "heartbeat", "user": "{USER_NAME}", "timestamp": "{int(time.time())}", "vmcount": "{manage.count_virtual_machine_processes()}"}}'
                     with self.lock:
                         self.ws.send(heartbeat_msg)
                     # write_log("發送心跳包")
@@ -87,6 +105,10 @@ class WebSocketClient:
 
     def reconnect(self):
         """5 秒後重新連接"""
+        if self.ws:
+            # write_log("正在關閉舊的 WebSocket 連線...")
+            self.ws.close()
+            self.ws = None
         if not self.running:
             time.sleep(5)
             self.connect()
@@ -94,7 +116,7 @@ class WebSocketClient:
 
 class MyService(win32serviceutil.ServiceFramework):
     _svc_name_ = "北匯電腦管理"
-    _svc_display_name_ = "VManager監測"
+    _svc_display_name_ = SERVICE_DISPLAY_NAME
     _svc_start_type_ = win32service.SERVICE_AUTO_START
 
     def __init__(self, args):
@@ -110,7 +132,10 @@ class MyService(win32serviceutil.ServiceFramework):
     def SvcDoRun(self):
         self.ReportServiceStatus(win32service.SERVICE_RUNNING)
 
-        ws_client = WebSocketClient()
+        try:
+            ws_client = WebSocketClient()
+        except Exception as e:
+            write_log(f"開啟WebSocket時發生錯誤: {e}")
 
         while self.running:
             # 模擬服務工作邏輯，定時輸出日誌

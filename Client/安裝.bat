@@ -11,7 +11,7 @@ if %errorlevel% neq 0 (
 cd /d "%~dp0"
 
 :: 安裝服務
-python test.py install
+python service.py install
 
 :: 提示完成
 echo Service installed and started successfully!
