@@ -27,7 +27,7 @@ async def register(request: RegisterRequest):
     account = request.account
     password = request.password
 
-    collection = db['Users']
+    collection = db['Accounts']
 
     existing_user = collection.find_one({"account": account})
     if existing_user:
@@ -52,7 +52,7 @@ async def login(request: RegisterRequest):
     account = request.account
     password = request.password
 
-    collection = db['Users']
+    collection = db['Accounts']
     user = collection.find_one({"account": account})
     if not user:
         raise HTTPException(status_code=401, detail="Account not found")
@@ -123,7 +123,7 @@ async def api(request: ApiRequest):
 
 @app.websocket("/websocket/{username}")
 async def websocket_endpoint(websocket: WebSocket, username: str):
-    collection = db['Users']
+    collection = db['Accounts']
     existing_user = collection.find_one({"username": username})
 
     if not existing_user:
