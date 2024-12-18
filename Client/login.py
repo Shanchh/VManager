@@ -28,6 +28,11 @@ def get_active_window_hwnd():
     hwnd = win32gui.GetForegroundWindow()
     return hwnd
 
+def print_welcome():
+    print("┍" + "━" * 26 + "┑")
+    print("│" + " " * 5 + "VManager登入系統"+ " " * 5 + "│")
+    print("┕" + "━" * 26 + "┙")
+
 class Client:
     def __init__(self, VMword, vmrun_path, vmx_path):
         self.VMword = VMword
@@ -97,6 +102,7 @@ def main():
         return
 
     try:
+        print_welcome()
         startLogin()
     finally:
         lock.release()
