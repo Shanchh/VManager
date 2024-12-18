@@ -17,10 +17,6 @@ class RegisterRequest(BaseModel):
     account: str
     password: str
 
-class LoginRequest(BaseModel):
-    username: str
-    password: str
-
 class ApiRequest(BaseModel):
     method: str
     content: dict
@@ -51,14 +47,18 @@ async def register(request: RegisterRequest):
     return {"message": "Account registered successfully", "username": username, "account": account, "VMword": VMword}
 
 @app.post("/login")
-async def login(request: LoginRequest):
+async def login(request: RegisterRequest):
     username = request.username
+    account = request.account
     password = request.password
 
     collection = db['Users']
-    user = collection.find_one({"account": username})
+    user = collection.find_one({"account": account})
     if not user:
-        raise HTTPException(status_code=401, detail="User not found")
+        raise HTTPException(status_code=401, detail="Account not found")
+    
+    if username not in connected_clients:
+        raise HTTPException(status_code=401, detail="Service startup not detected")
     
     if bcrypt.verify(password, user["password"]):
         clientId = ''.join(random.choices(string.ascii_letters + string.digits, k=20))
@@ -68,7 +68,7 @@ async def login(request: LoginRequest):
             "VMword": user['VMword']
         })
     else:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        raise HTTPException(status_code=401, detail="Invalid password")
     
 @app.get("/list_connected")
 async def list_connected():
@@ -121,9 +121,18 @@ async def api(request: ApiRequest):
     else:
         raise HTTPException(status_code=400, detail="無效Method.")
 
-# WebSocket 端點
 @app.websocket("/websocket/{username}")
 async def websocket_endpoint(websocket: WebSocket, username: str):
+    collection = db['Users']
+    existing_user = collection.find_one({"username": username})
+
+    if not existing_user:
+        await websocket.accept()
+        await websocket.send_text("usernotregistered")
+        print(f"用戶 {username} 未註冊, 已拒絕連線.")
+        await websocket.close()
+        return
+
     # 接受 WebSocket 連接
     await websocket.accept()
     print(f"用戶 {username} 已連線.")
