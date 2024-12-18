@@ -73,20 +73,25 @@ class Client:
 
 def startLogin():
     try:
-        username = input(f"{get_time_now()}請輸入帳號：")
-        password = input(f"{get_time_now()}請輸入密碼：")
+        while True:
+            account = input(f"{get_time_now()}請輸入帳號：")
+            password = input(f"{get_time_now()}請輸入密碼：")
 
-        response = requests.post(f"{SERVER_URL}/login", json={"username": username, "password": password})
-        if response.status_code == 200:
-            data = response.json()
-            if data["status"] == "success":
-                client = Client(data['VMword'], VMRUN_PATH, VMX_PATH)
-                client.login_VM()
-                return
+            response = requests.post(f"{SERVER_URL}/login", json={"username": USER_NAME, "account": account, "password": password})
+            if response.status_code == 200:
+                data = response.json()
+                if data["status"] == "success":
+                    client = Client(data['VMword'], VMRUN_PATH, VMX_PATH)
+                    client.login_VM()
+                    break
+                else:
+                    print(f"{get_time_now()}密碼錯誤！\n━")
             else:
-                print(f"{get_time_now()}密碼錯誤！")
-        else:
-            print(f"{get_time_now()}密碼錯誤！")
+                try:
+                    error_detail = response.json().get("detail", "Unknown error")
+                    print(f"{get_time_now()}登入失敗！原因：{error_detail}\n━")
+                except ValueError:
+                    print(f"{get_time_now()}登入失敗！無法解析伺服器的回應內容。\n━")
 
     except Exception as e:
         print(f"{get_time_now()}登入時發生錯誤, Error:{e}")

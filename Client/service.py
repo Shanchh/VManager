@@ -31,6 +31,7 @@ def write_log(msg):
 class WebSocketClient:
     def __init__(self):
         self.running = True
+        self.tryre = True
         self.lock = threading.Lock()
         self.ws = None
         self.heartbeat_interval = 5
@@ -58,7 +59,7 @@ class WebSocketClient:
             self.reconnect()
 
     def on_open(self, ws):
-        write_log("WebSocket 連接成功，啟動心跳包...")
+        write_log("WebSocket 連接成功")
         self.running = True
         threading.Thread(target=self.send_heartbeat, daemon=True).start()
 
@@ -76,11 +77,13 @@ class WebSocketClient:
             manage.shutdown_computer()
             self.ws.send(f"{USER_NAME}: shutdown_computer 執行完畢")
         
-        if message == "login_request":
-            pass
+        if message == "usernotregistered":
+            write_log("收到 usernotregistered 訊息，停止服務。")
+            self.tryre = False
+            self.ws.close()
 
     def on_close(self, ws, close_status_code, close_msg):
-        write_log("WebSocket 連接已關閉，5 秒後重新連接...")
+        write_log("WebSocket 連接已關閉")
         self.running = False
         self.reconnect()
 
@@ -90,6 +93,7 @@ class WebSocketClient:
 
     def send_heartbeat(self):
         """定期發送心跳包，確保連線保持活躍"""
+        write_log("已啟動心跳包...")
         while self.running:
             try:
                 if self.ws and self.ws.sock and self.ws.sock.connected:
@@ -109,7 +113,8 @@ class WebSocketClient:
             # write_log("正在關閉舊的 WebSocket 連線...")
             self.ws.close()
             self.ws = None
-        if not self.running:
+        if not self.running and self.tryre:
+            write_log('5 秒後重新連接...')
             time.sleep(5)
             self.connect()
 
