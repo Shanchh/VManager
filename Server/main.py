@@ -6,6 +6,7 @@ import string
 from pydantic import BaseModel
 from setting import db
 import time
+import json
 
 app = FastAPI()
 # uvicorn main:app --host 127.0.0.1 --port 2666 --reload
@@ -139,7 +140,8 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
     connected_clients[username] = {
         "websocket": websocket,
         "username": username,
-        "connected_at": int(time.time())
+        "connected_at": int(time.time()),
+        "vmcount": 0
     }
 
     try:
@@ -147,6 +149,10 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
             # 接收消息
             message = await websocket.receive_text()
             print(f"收到訊息來自 {username}: {message}")
+
+            message = json.loads(message)
+            if message['type'] == "heartbeat":
+                heartbeat_process(username, message)
 
             # # 回傳回聲消息
             # await websocket.send_text(f"Echo: {message}")
@@ -157,3 +163,11 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
     finally:
         # 移除斷開的連接
         connected_clients.pop(username, None)
+
+def heartbeat_process(username, message):
+    try:
+        vmcount = int(message['vmcount'])
+        if connected_clients[username]['vmcount'] != vmcount:
+            connected_clients[username]['vmcount'] = vmcount
+    except Exception as e:
+        print(f"Heartbeat 處理錯誤. 來自 {username}: {e}")
