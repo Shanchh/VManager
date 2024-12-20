@@ -2,6 +2,8 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/login/LoginPage';
 import AuthProvider from './auth/AuthProvider';
+import Home from './pages/main/Home';
+import ProtectedRoute from './auth/ProtectedRoute';
 
 function App() {
   return (
@@ -9,7 +11,11 @@ function App() {
       <Router>
         <AuthProvider>
           <Routes>
-            <Route path="/Login" element={<LoginPage />} />
+            <Route path="/login" element={<LoginPage />} />
+
+            <Route element={<ProtectedRoute />}>
+              <Route path="/" element={<Home />} />
+            </Route>
           </Routes>
         </AuthProvider>
       </Router>

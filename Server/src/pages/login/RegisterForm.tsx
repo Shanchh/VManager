@@ -27,6 +27,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onLoginClick }) => {
         } finally {
             setLoading(false);
         }
+
+        onLoginClick();
     }
 
     return (
