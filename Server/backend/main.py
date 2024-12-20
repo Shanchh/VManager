@@ -1,29 +1,33 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
 from fastapi.responses import JSONResponse
 from passlib.hash import bcrypt
 import random
 import string
-from pydantic import BaseModel
-from setting import db
+from config.setting import db
 import time
 import json
+import auth
+
+import requestClass
 
 app = FastAPI()
 # uvicorn main:app --host 127.0.0.1 --port 2666 --reload
 
 connected_clients = {}
 
-class RegisterRequest(BaseModel):
-    username: str
-    account: str
-    password: str
+@app.get("/get_my_profile")
+@auth.login_required
+async def get_my_profile(request: Request):
+    user = auth.get_current_user(request)
+    
+    collection = db['Users']
+    userData = collection.find_one({"email": user.email})
+    userData.pop("_id", None)
 
-class ApiRequest(BaseModel):
-    method: str
-    content: dict
+    return {"message": userData}
 
 @app.post("/register")
-async def register(request: RegisterRequest):
+async def register(request: requestClass.RegisterRequest):
     username = request.username
     account = request.account
     password = request.password
@@ -48,7 +52,7 @@ async def register(request: RegisterRequest):
     return {"message": "Account registered successfully", "username": username, "account": account, "VMword": VMword}
 
 @app.post("/login")
-async def login(request: RegisterRequest):
+async def login(request: requestClass.RegisterRequest):
     username = request.username
     account = request.account
     password = request.password
@@ -82,7 +86,7 @@ async def list_connected():
     return JSONResponse(content={"connected_clients": clients_info})
 
 @app.post("/api")
-async def api(request: ApiRequest):
+async def api(request: requestClass.ApiRequest):
     method = request.method
     content = request.content
     
