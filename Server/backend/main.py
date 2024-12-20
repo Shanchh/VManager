@@ -1,11 +1,12 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
 from fastapi.responses import JSONResponse
 from passlib.hash import bcrypt
 import random
 import string
-from Server.backend.config.setting import db
+from config.setting import db
 import time
 import json
+import auth
 
 import requestClass
 
@@ -13,6 +14,17 @@ app = FastAPI()
 # uvicorn main:app --host 127.0.0.1 --port 2666 --reload
 
 connected_clients = {}
+
+@app.get("/get_my_profile")
+@auth.login_required
+async def get_my_profile(request: Request):
+    user = auth.get_current_user(request)
+    
+    collection = db['Users']
+    userData = collection.find_one({"email": user.email})
+    userData.pop("_id", None)
+
+    return {"message": userData}
 
 @app.post("/register")
 async def register(request: requestClass.RegisterRequest):

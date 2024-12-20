@@ -4,6 +4,7 @@ import { DesktopOutlined } from '@ant-design/icons';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../auth/FirebaseConfig';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../auth/AuthProvider';
 
 interface LoginFormProps {
     onRegisterClick: () => void;
@@ -25,12 +26,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ onRegisterClick }) => {
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
-    
+
             if (!user.emailVerified) {
                 message.error("您的信箱尚未驗證，請檢查您的信箱並完成驗證！");
                 return;
             }
-    
+
             message.success(`歡迎回來，${user.email}`);
             navigate("/");
         } catch (error: any) {
@@ -59,7 +60,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onRegisterClick }) => {
                     <Button type="primary" htmlType="submit" loading={loading} block>登錄</Button>
                 </Form.Item>
                 <Flex justify="center" gap={5}>
-                    <span style={{color: 'gray'}}>您還沒有帳號嗎?</span>
+                    <span style={{ color: 'gray' }}>您還沒有帳號嗎?</span>
                     <a onClick={() => onRegisterClick()}>註冊帳號</a>
                 </Flex>
             </Form>

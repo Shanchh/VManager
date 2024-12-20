@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import { auth } from "./FirebaseConfig";
 import { User } from "firebase/auth";
 import axios from "axios";
-// import { get_my_profile } from "../api/admin";
+import { get_my_profile } from "../api/ProcessApi";
 
 interface AuthContextProps {
     children: React.ReactNode
@@ -44,20 +44,29 @@ const AuthProvider: React.FC<AuthContextProps> = ({ children }) => {
             console.log("刷新網頁!");
         }, (120 * 60) * 1000);
 
-        // get_my_profile()
-        //     .then((profile: UserProfile) => {
-        //         setUserProfile(profile);
-        //     });
+        fetchUserProfile();
     }
+
+    const fetchUserProfile = async () => {
+        try {
+            const profile = await get_my_profile();
+            setUserProfile(profile);
+            setAuthIsLoading(false);
+        } catch (error) {
+            console.error("獲取用戶資料失敗, 0.5秒後重試...");
+            setTimeout(fetchUserProfile, 500);
+        }
+    };
 
     // 掛載Auth監聽器
     useEffect(() => {
         auth.onAuthStateChanged((user) => {
             setUser(user);
-            setAuthIsLoading(false);
 
             if (user)
                 initializeAuth(user);
+            else
+                setAuthIsLoading(false);
         });
     }, []);
 

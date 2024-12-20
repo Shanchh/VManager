@@ -1,24 +1,33 @@
 import React from 'react';
-import { Button, message } from 'antd';
-import { auth } from '../../auth/FirebaseConfig';
-import { signOut } from 'firebase/auth';
+import { Button, Layout, theme } from 'antd';
+import Header from '../../component/main/Header';
+import { Outlet } from 'react-router';
+import OptionList from '../../component/main/OptionList';
+import { get_my_profile } from '../../api/ProcessApi';
 
-const Home: React.FC = () => {
-    const logout = async () => {
-        try {
-            await signOut(auth); // 调用 Firebase 的登出方法
-            message.success('登出成功！');
-        } catch (error) {
-            console.error('登出失败:', error);
-            message.error('登出失败，请稍后再试！');
-        }
-    };
+const { Sider } = Layout;
+
+const MainPage: React.FC = () => {
+    const {
+        token: { colorBgContainer },
+    } = theme.useToken();
+
+    const test = () => {
+        const a = get_my_profile();
+        console.log(a);
+    }
 
     return (
-        <Button type="primary" onClick={logout}>
-            登出
-        </Button>
+        <Layout style={{ height: '100vh', width: '100%' }}>
+            <Header />
+            <Layout>
+                <Sider width={200} style={{ background: colorBgContainer }}>
+                    <OptionList />
+                </Sider>
+                <Button onClick={() => test()}></Button>
+            </Layout>
+        </Layout>
     );
 };
 
-export default Home;
+export default MainPage;
