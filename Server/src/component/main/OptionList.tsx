@@ -1,6 +1,6 @@
 import React from 'react'
 import { Menu } from 'antd';
-import { BugOutlined, SettingOutlined, UserOutlined } from '@ant-design/icons';
+import { BugOutlined, SettingOutlined, UserOutlined, SolutionOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { useLocation, useNavigate } from "react-router-dom"
 
@@ -19,6 +19,9 @@ const OptionList = () => {
             key: 'group-2',
             icon: <BugOutlined />,
             label: '管理功能',
+            children: [
+                { key: '/management/user-manage', label: '帳號管理', icon: <SolutionOutlined />, onClick: () => navigate("/management/user-manage") },
+            ],
         },
         {
             key: '/setting',

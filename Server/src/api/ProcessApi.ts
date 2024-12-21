@@ -19,3 +19,13 @@ export const get_my_profile = async (email: string | null) => {
         throw err;
     }
 }
+
+export const get_all_account_data = async () => {
+    try {
+        const res = await axios.get("/get_all_account_data");
+        return res.data.message;
+    }
+    catch (err) {
+        throw err;
+    }
+}

@@ -69,7 +69,7 @@ const AuthProvider: React.FC<AuthContextProps> = ({ children }) => {
     useEffect(() => {
         auth.onAuthStateChanged((user) => {
             setUser(user);
-            console.log(user);
+            
             if (user && user.emailVerified) {
                 initializeAuth(user);
             } else {

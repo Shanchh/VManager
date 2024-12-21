@@ -15,6 +15,8 @@ app = FastAPI()
 
 connected_clients = {}
 
+admin_permissions = ['admin', 'onwer']
+
 @app.post("/create_user")
 async def create_user(request: requestClass.CreateUserRequest):
     email = request.email
@@ -30,7 +32,10 @@ async def create_user(request: requestClass.CreateUserRequest):
     userData = {
         "email": email,
         "nickname": nickname,
-        "role": role
+        "role": role,
+        "createAt": int(time.time()),
+        "VMisCreate": False,
+        "heartbeatCount": 0
     }
 
     r = collection.insert_one(userData)
@@ -51,6 +56,31 @@ async def get_my_profile(request: requestClass.GetProfileRequest):
     userData.pop("_id", None)
 
     return {"message": userData}
+
+@app.get("/get_all_account_data")
+async def get_all_account_data(request: Request):
+    try:
+        user = auth.get_current_user(request)
+
+        collection = db['Users']
+        user = collection.find_one({"email": user.email})
+        
+        if user['role'] not in ['admin', 'owner']:
+            raise HTTPException(status_code=400, detail="Insufficient account permissions")
+        
+        accountList = list(collection.find())
+
+        for account in accountList:
+            account['_id'] = str(account['_id'])
+
+        result = {
+            "code": 0,
+            "message": accountList
+        }
+        
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="取得帳號列表時發生錯誤")
 
 @app.post("/register")
 async def register(request: requestClass.RegisterRequest):

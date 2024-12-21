@@ -6,6 +6,7 @@ import Home from './pages/main/Home';
 import ProtectedRoute from './auth/ProtectedRoute';
 import MyProfile from './pages/content/MyProfile';
 import Setting from './pages/main/Setting';
+import UserManage from './pages/content/UserManage';
 
 function App() {
   return (
@@ -18,6 +19,8 @@ function App() {
             <Route element={<ProtectedRoute />}>
               <Route path="/" element={<Home />}>
                 <Route path="/my-profile" element={<MyProfile />} />
+                
+                <Route path="/management/user-manage" element={<UserManage />} />
                 
                 <Route path="/setting" element={<Setting />} />
               </Route>

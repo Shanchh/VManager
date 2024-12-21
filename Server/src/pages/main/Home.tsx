@@ -25,10 +25,13 @@ const MainPage: React.FC = () => {
                     <Content
                         style={{
                             flex: 1,
-                            padding: 24,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            padding: 12,
                             margin: 0,
                             background: colorBgContainer,
                             borderRadius: borderRadiusLG,
+                            overflow: 'auto',
                         }}
                     >
                         <Outlet />
