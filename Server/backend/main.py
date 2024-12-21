@@ -15,13 +15,39 @@ app = FastAPI()
 
 connected_clients = {}
 
-@app.get("/get_my_profile")
-@auth.login_required
-async def get_my_profile(request: Request):
-    user = auth.get_current_user(request)
+@app.post("/create_user")
+async def create_user(request: requestClass.CreateUserRequest):
+    email = request.email
+    nickname = request.nickname
+    role = 'user'
+
+    collection = db['Users']
+
+    existing_user = collection.find_one({"email": email})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="信箱已註冊!")
+    
+    userData = {
+        "email": email,
+        "nickname": nickname,
+        "role": role
+    }
+
+    r = collection.insert_one(userData)
+    
+    result = {
+        "code": 0,
+        "message": "User registered successfully"
+    }
+
+    return result
+
+@app.post("/get_my_profile")
+async def get_my_profile(request: requestClass.GetProfileRequest):
+    email = request.email
     
     collection = db['Users']
-    userData = collection.find_one({"email": user.email})
+    userData = collection.find_one({"email": email})
     userData.pop("_id", None)
 
     return {"message": userData}

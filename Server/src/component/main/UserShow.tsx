@@ -5,7 +5,7 @@ import { useAuth } from '../../auth/AuthProvider';
 import { auth } from '../../auth/FirebaseConfig';
 
 const UserShow = () => {
-    const { userProfile, setUser } = useAuth();
+    const { userProfile, user, setUser } = useAuth();
 
     const handleLogout = () => {
         auth.signOut().then(() => {
@@ -34,7 +34,7 @@ const UserShow = () => {
         <Dropdown menu={{ items }} placement="bottomRight" arrow>
             <Button type="text">
                 <div style={{ fontFamily: 'Roboto, sans-serif', fontSize: '20px' }}>
-                    {userProfile?.nickname || userProfile?.email || 'Loading'}
+                    {userProfile?.nickname || user.email || 'Loading'}
                 </div>
             </Button>
         </Dropdown>

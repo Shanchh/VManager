@@ -13,8 +13,6 @@ const MainPage: React.FC = () => {
     } = theme.useToken();
 
     const test = () => {
-        const a = get_my_profile();
-        console.log(a);
     }
 
     return (

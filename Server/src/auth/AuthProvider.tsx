@@ -30,31 +30,38 @@ const AuthProvider: React.FC<AuthContextProps> = ({ children }) => {
 
     // 登入後初始化
     const initializeAuth = async (user: User) => {
-        const idToken = await user.getIdToken();
-        axios.defaults.headers.common.Authorization = `Bearer ${idToken}`;
-
-        setInterval(async () => {
-            const idToken = await user.getIdToken(true);
+        if (user.emailVerified) {
+            const idToken = await user.getIdToken();
             axios.defaults.headers.common.Authorization = `Bearer ${idToken}`;
-            console.log("更新token成功!");
-        }, (10 * 60) * 1000);
 
-        setInterval(() => {
-            window.location.reload();
-            console.log("刷新網頁!");
-        }, (120 * 60) * 1000);
+            setInterval(async () => {
+                const idToken = await user.getIdToken(true);
+                axios.defaults.headers.common.Authorization = `Bearer ${idToken}`;
+                console.log("更新token成功!");
+            }, (10 * 60) * 1000);
 
-        fetchUserProfile();
+            setInterval(() => {
+                window.location.reload();
+                console.log("刷新網頁!");
+            }, (120 * 60) * 1000);
+
+            fetchUserProfile(user.email);
+        }
     }
 
-    const fetchUserProfile = async () => {
+    const fetchUserProfile = async (email: string | null, retryCount = 0) => {
         try {
-            const profile = await get_my_profile();
+            const profile = await get_my_profile(email);
             setUserProfile(profile);
             setAuthIsLoading(false);
         } catch (error) {
             console.error("獲取用戶資料失敗, 0.5秒後重試...");
-            setTimeout(fetchUserProfile, 500);
+            if (retryCount < 10) {
+                setTimeout(() => fetchUserProfile(email, retryCount + 1), 500);
+            } else {
+                console.error("重試次數超過限制，請檢查伺服器狀態！");
+                setAuthIsLoading(false);
+            }
         }
     };
 
@@ -62,11 +69,12 @@ const AuthProvider: React.FC<AuthContextProps> = ({ children }) => {
     useEffect(() => {
         auth.onAuthStateChanged((user) => {
             setUser(user);
-
-            if (user)
+            console.log(user);
+            if (user && user.emailVerified) {
                 initializeAuth(user);
-            else
+            } else {
                 setAuthIsLoading(false);
+            }
         });
     }, []);
 
