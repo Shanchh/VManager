@@ -8,3 +8,10 @@ class RegisterRequest(BaseModel):
 class ApiRequest(BaseModel):
     method: str
     content: dict
+
+class CreateUserRequest(BaseModel):
+    email: str
+    nickname: str
+
+class GetProfileRequest(BaseModel):
+    email: str

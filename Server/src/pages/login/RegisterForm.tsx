@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { UserAddOutlined } from '@ant-design/icons';
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { auth } from '../../auth/FirebaseConfig';
+import { create_user } from '../../api/ProcessApi';
 
 interface RegisterFormProps {
     onLoginClick: () => void;
@@ -15,20 +16,20 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onLoginClick }) => {
         setLoading(true);
 
         try {
+            await create_user(values.email, values.name);
             const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
 
             await sendEmailVerification(userCredential.user);
             message.success('註冊成功！請檢查您的電子郵件以完成驗證。');
             console.log('驗證信已發送：', userCredential.user.email);
 
+            onLoginClick();
         } catch (error: any) {
             console.error('註冊失敗：', error);
-            message.error(`註冊失敗：${error.message}`);
+            message.error(`註冊失敗：${error.response.data.detail}`);
         } finally {
             setLoading(false);
         }
-
-        onLoginClick();
     }
 
     return (

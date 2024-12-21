@@ -4,7 +4,7 @@ import { DesktopOutlined } from '@ant-design/icons';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../auth/FirebaseConfig';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../auth/AuthProvider';
+import ForgetPasswordBtn from './ForgetPasswordBtn';
 
 interface LoginFormProps {
     onRegisterClick: () => void;
@@ -14,10 +14,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onRegisterClick }) => {
     const [loading, setLoading] = useState<boolean>(false);
 
     const navigate = useNavigate();
-
-    const onForgetPassword = () => {
-        message.info('忘記密碼功能尚未實現！');
-    };
 
     const onFinish = async (values: { email: string; password: string }) => {
         const { email, password } = values;
@@ -56,7 +52,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onRegisterClick }) => {
                     <Input.Password placeholder="輸入您的密碼" />
                 </Form.Item>
                 <Form.Item>
-                    <a onClick={onForgetPassword}>忘記密碼?</a>
+                    <ForgetPasswordBtn />
                     <Button type="primary" htmlType="submit" loading={loading} block>登錄</Button>
                 </Form.Item>
                 <Flex justify="center" gap={5}>
