@@ -144,7 +144,7 @@ const AccountListTable: React.FC<AccountListTableProps> = ({ data }) => {
     };
 
     const [pageSize, setPageSize] = useState(10);
-    const rowHeight = 57;
+    const rowHeight = 50;
 
     return (
         <Table

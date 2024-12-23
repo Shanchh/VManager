@@ -80,7 +80,7 @@ async def get_all_account_data(request: Request):
         
         return result
     except Exception as e:
-        raise HTTPException(status_code=404, detail="取得帳號列表時發生錯誤")
+        raise HTTPException(status_code=404, detail=f"取得帳號列表時發生錯誤, {e}")
 
 @app.post("/register")
 async def register(request: requestClass.RegisterRequest):
