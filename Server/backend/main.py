@@ -50,8 +50,9 @@ async def create_user(request: requestClass.CreateUserRequest):
     return result
 
 @app.post("/get_my_profile")
-async def get_my_profile(request: requestClass.GetProfileRequest):
-    email = request.email
+@auth.login_required
+async def get_my_profile(request: Request, body: requestClass.GetProfileRequest):
+    email = body.email
     
     collection = db['Users']
     userData = collection.find_one({"email": email})
@@ -178,10 +179,19 @@ async def list_connected(request: Request):
         raise HTTPException(status_code=404, detail=f"取得線上裝置列表時發生錯誤, {e}")
 
 @app.post("/api")
-async def api(request: requestClass.ApiRequest):
-    method = request.method
-    content = request.content
+@auth.login_required
+async def api(request: Request, body: requestClass.ApiRequest):
+    method = body.method
+    content = body.content
     
+    user = auth.get_current_user(request)
+
+    collection = db['Users']
+    user = collection.find_one({"email": user.email})
+
+    if user['role'] not in ['admin', 'owner']:
+        raise HTTPException(status_code=400, detail="Insufficient account permissions")
+
     command = {
         "close_vmware_workstation": "close_vmware_workstation",
         "restart_computer": "restart_computer",

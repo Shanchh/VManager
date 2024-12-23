@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Client } from '../types/type';
-import { Badge, Button, Flex, Popconfirm, Table, Tag, type TableProps } from 'antd';
+import { Badge, Table, Tag, type TableProps } from 'antd';
+import OnlineClientOperate from './OnlineClientOperate';
 
 interface OnlineClientTableProps {
     data: Client[];
@@ -122,22 +123,7 @@ const OnlineClientTable: React.FC<OnlineClientTableProps> = ({ data }) => {
             key: 'action',
             align: 'center',
             render: (data: Client) => (
-                <Flex justify="center" align="center" gap={5}>
-                    <Popconfirm placement="top" title="刪除資料庫" description={`確定要重製嗎？`} okText="確認" cancelText="取消">
-                        <Button
-                            type="default"
-                            style={{ height: 25, width: 45 }}
-                        >重製
-                        </Button>
-                    </Popconfirm>
-                    <Popconfirm placement="top" title="刪除資料庫" description={`確定要刪除嗎？`} okText="確認" cancelText="取消">
-                        <Button
-                            type="default"
-                            style={{ height: 25, width: 45 }}
-                        >刪除
-                        </Button>
-                    </Popconfirm>
-                </Flex>
+                <OnlineClientOperate data={data} />
             ),
         },
     ];

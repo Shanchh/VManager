@@ -39,3 +39,13 @@ export const list_connected = async () => {
         throw err;
     }
 }
+
+export const call_operation = async (command: any) => {
+    try {
+        const res = await axios.post("/api", command);
+        return res.data.message;
+    }
+    catch (err) {
+        throw err;
+    }
+}
