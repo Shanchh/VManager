@@ -7,6 +7,7 @@ const breadcrumbNameMap: Record<string, string> = {
     "/my-profile": "個人頁面",
     "/management": "管理功能",
     "/management/user-manage": "帳號管理",
+    "/management/online-manage": "線上裝置管理",
     "/setting": "設定",
 };
 

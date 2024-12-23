@@ -7,6 +7,8 @@ from config.setting import db
 import time
 import json
 import auth
+from urllib.parse import unquote
+from datetime import datetime
 
 import requestClass
 
@@ -48,8 +50,9 @@ async def create_user(request: requestClass.CreateUserRequest):
     return result
 
 @app.post("/get_my_profile")
-async def get_my_profile(request: requestClass.GetProfileRequest):
-    email = request.email
+@auth.login_required
+async def get_my_profile(request: Request, body: requestClass.GetProfileRequest):
+    email = body.email
     
     collection = db['Users']
     userData = collection.find_one({"email": email})
@@ -58,6 +61,7 @@ async def get_my_profile(request: requestClass.GetProfileRequest):
     return {"message": userData}
 
 @app.get("/get_all_account_data")
+@auth.login_required
 async def get_all_account_data(request: Request):
     try:
         user = auth.get_current_user(request)
@@ -80,7 +84,7 @@ async def get_all_account_data(request: Request):
         
         return result
     except Exception as e:
-        raise HTTPException(status_code=404, detail="取得帳號列表時發生錯誤")
+        raise HTTPException(status_code=404, detail=f"取得帳號列表時發生錯誤, {e}")
 
 @app.post("/register")
 async def register(request: requestClass.RegisterRequest):
@@ -132,20 +136,62 @@ async def login(request: requestClass.RegisterRequest):
         raise HTTPException(status_code=401, detail="Invalid password")
     
 @app.get("/list_connected")
-async def list_connected():
-    clients_info = {}
-    for client_id, data in connected_clients.items():
-        client_data = data.copy()
-        client_data.pop('websocket', None)
-        clients_info[client_id] = client_data
-    
-    return JSONResponse(content={"connected_clients": clients_info})
+@auth.login_required
+async def list_connected(request: Request):
+    try:
+        user = auth.get_current_user(request)
+
+        collection = db['Users']
+        user = collection.find_one({"email": user.email})
+        
+        if user['role'] not in ['admin', 'owner']:
+            raise HTTPException(status_code=400, detail="Insufficient account permissions")
+        
+        accountList = list(collection.find())
+
+        clients_info = []
+        for client_id, data in connected_clients.items():
+            client_data = data.copy()
+            client_data.pop('websocket', None)
+            client_data['client_id'] = client_id
+            
+            account = next((account for account in accountList if account.get('nickname') == client_id), None)
+            if account:
+                client_data['role'] = account.get('role')
+            else:
+                client_data['role'] = 'Unknown'
+
+            current_time = datetime.now().timestamp()
+            connected_at = client_data.get('connected_at', 0)
+            connection_duration = current_time - connected_at
+
+            client_data['connection_duration'] = int(connection_duration)
+
+            clients_info.append(client_data)
+
+        result = {
+            "code": 0,
+            "message": clients_info
+        }
+        
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"取得線上裝置列表時發生錯誤, {e}")
 
 @app.post("/api")
-async def api(request: requestClass.ApiRequest):
-    method = request.method
-    content = request.content
+@auth.login_required
+async def api(request: Request, body: requestClass.ApiRequest):
+    method = body.method
+    content = body.content
     
+    user = auth.get_current_user(request)
+
+    collection = db['Users']
+    user = collection.find_one({"email": user.email})
+
+    if user['role'] not in ['admin', 'owner']:
+        raise HTTPException(status_code=400, detail="Insufficient account permissions")
+
     command = {
         "close_vmware_workstation": "close_vmware_workstation",
         "restart_computer": "restart_computer",
@@ -184,8 +230,9 @@ async def api(request: requestClass.ApiRequest):
 
 @app.websocket("/websocket/{username}")
 async def websocket_endpoint(websocket: WebSocket, username: str):
-    collection = db['Accounts']
-    existing_user = collection.find_one({"username": username})
+    username = unquote(username)
+    collection = db['Users']
+    existing_user = collection.find_one({"nickname": username})
 
     if not existing_user:
         await websocket.accept()
@@ -196,12 +243,15 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
 
     # 接受 WebSocket 連接
     await websocket.accept()
-    print(f"用戶 {username} 已連線.")
+    client_ip = websocket.client.host
+    print(f"用戶 {username} 已連線. IP: {client_ip}")
+
     connected_clients[username] = {
         "websocket": websocket,
         "username": username,
         "connected_at": int(time.time()),
-        "vmcount": 0
+        "vmcount": 0,
+        "ip": client_ip
     }
 
     try:
@@ -229,5 +279,11 @@ def heartbeat_process(username, message):
         vmcount = int(message['vmcount'])
         if connected_clients[username]['vmcount'] != vmcount:
             connected_clients[username]['vmcount'] = vmcount
+
+        collection = db['Users']        
+        collection.update_one(
+            {"nickname": username},
+            {"$inc": {"heartbeatCount": 1}}
+        )
     except Exception as e:
         print(f"Heartbeat 處理錯誤. 來自 {username}: {e}")
