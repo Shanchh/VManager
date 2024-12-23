@@ -17,6 +17,7 @@ const UserManage = () => {
     const [tableLoading, setTableLoading] = useState<boolean>(false);
     const [accountListData, setAccountListData] = useState<Account[]>([]);
     const [filteredData, setFilteredData] = useState<Account[]>([]);
+    const [searchLoading, setSearchLoading] = useState<boolean>(false);
 
     const { RangePicker } = DatePicker;
 
@@ -35,6 +36,7 @@ const UserManage = () => {
     const all_admin_role = ['admin', 'owner'];
 
     const onFinish = (values: Filter) => {
+        setSearchLoading(true);
         const { type, nickname, email, createDate, VMIsCreate } = values;
 
         const filtered = accountListData.filter((item) => {
@@ -51,14 +53,14 @@ const UserManage = () => {
         });
 
         setFilteredData(filtered);
+        setSearchLoading(false);
     };
 
     return (
-
         <Flex>
             <Flex vertical justify='center' align='center' gap={10} style={{ width: '100%' }}>
                 <Form
-                    name="login_form"
+                    name="user_search"
                     layout="vertical"
                     onFinish={(values) => onFinish(values)}
                     style={{ width: '100%', padding: '0 10px 0 10px' }}
@@ -92,7 +94,7 @@ const UserManage = () => {
                             <Form.Item name="email" rules={[{ type: 'email', message: '請輸入有效的信箱!' }]} initialValue={''}>
                                 <Flex justify="start" align="center" gap={10}>
                                     <h3>信箱：</h3>
-                                    <Input placeholder="請輸入信箱" prefix={<MailOutlined />} style={{ width: 300 }} />
+                                    <Input placeholder="請輸入信箱" prefix={<MailOutlined />} style={{ width: 280 }} />
                                 </Flex>
                             </Form.Item>
                         </Col>
@@ -118,7 +120,7 @@ const UserManage = () => {
                         </Col>
                     </Row>
                     <Flex justify="end" style={{ paddingTop: 10 }} gap={10}>
-                        <Button htmlType="submit" type="primary" icon={<SearchOutlined />}>
+                        <Button htmlType="submit" type="primary" icon={<SearchOutlined />} loading={searchLoading}>
                             條件查詢
                         </Button>
                         <Button htmlType="reset" type="default">

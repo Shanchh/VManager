@@ -29,3 +29,13 @@ export const get_all_account_data = async () => {
         throw err;
     }
 }
+
+export const list_connected = async () => {
+    try {
+        const res = await axios.get("/list_connected");
+        return res.data.message;
+    }
+    catch (err) {
+        throw err;
+    }
+}
