@@ -8,6 +8,7 @@ import os
 import threading
 import websocket
 from datetime import datetime
+from urllib.parse import quote
 
 import manage
 
@@ -45,7 +46,7 @@ class WebSocketClient:
             return
         try:
             write_log("正在嘗試連接 WebSocket...")
-            ws_url = f"{WEBSOCKET_URL}/websocket/{USER_NAME}"
+            ws_url = f"{WEBSOCKET_URL}/websocket/{quote(USER_NAME)}"
             self.ws = websocket.WebSocketApp(
                 ws_url,
                 on_open=self.on_open,
