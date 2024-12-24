@@ -9,14 +9,14 @@ interface RegisterVmBtnProps {
 }
 
 const RegisterVmBtn: React.FC<RegisterVmBtnProps> = ({ VMisCreate, refreshData }) => {
-    const [modalOpen, setModal1Open] = useState<boolean>(false);
+    const [modalOpen, setModalOpen] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
     const [passwordInput, setPasswordInput] = useState<string>('');
 
     const registerVM = async () => {
         setLoading(true);
         if (passwordInput != '00000000') {
-            setModal1Open(false);
+            setModalOpen(false);
             setLoading(false);
             message.error("管理員密碼錯誤！")
             return
@@ -30,7 +30,7 @@ const RegisterVmBtn: React.FC<RegisterVmBtnProps> = ({ VMisCreate, refreshData }
             console.error(error);
             message.error("創建失敗！");
         } finally {
-            setModal1Open(false);
+            setModalOpen(false);
             setLoading(false);
             refreshData();
         }
@@ -43,7 +43,7 @@ const RegisterVmBtn: React.FC<RegisterVmBtnProps> = ({ VMisCreate, refreshData }
         return isCreate ? (
             <Button color="primary" variant="solid" disabled>註冊虛擬機帳號</Button>
         ) : (
-            <Button color="primary" variant="solid" onClick={() => setModal1Open(true)}>註冊虛擬機帳號</Button>
+            <Button color="primary" variant="solid" onClick={() => setModalOpen(true)}>註冊虛擬機帳號</Button>
         );
     };
 
@@ -60,7 +60,7 @@ const RegisterVmBtn: React.FC<RegisterVmBtnProps> = ({ VMisCreate, refreshData }
                 }
                 open={modalOpen}
                 width={300}
-                onCancel={() => setModal1Open(false)}
+                onCancel={() => setModalOpen(false)}
                 footer={null}
             >
                 <Input.Password
@@ -73,7 +73,7 @@ const RegisterVmBtn: React.FC<RegisterVmBtnProps> = ({ VMisCreate, refreshData }
                     <Button color="primary" variant="solid" style={{ fontSize: 16 }} loading={loading} onClick={() => registerVM()}>
                         創建
                     </Button>
-                    <Button color="default" variant="outlined" style={{ fontSize: 16 }} onClick={() => setModal1Open(false)}>
+                    <Button color="default" variant="outlined" style={{ fontSize: 16 }} onClick={() => setModalOpen(false)}>
                         取消
                     </Button>
                 </Flex>
