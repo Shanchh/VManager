@@ -8,13 +8,22 @@ import os
 import threading
 import websocket
 from datetime import datetime
+from urllib.parse import quote
+import json
 
 import manage
 
-SERVICE_DISPLAY_NAME = "VManager監測 v1.0.1"
+SERVICE_VERSION = "v1.0.1"
+SERVICE_DISPLAY_NAME = f"VManager監測 {SERVICE_VERSION}"
 
-log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'log.yml')
-config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
+def get_executable_dir():
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        return os.path.dirname(sys.executable)
+    else:
+        return os.path.dirname(os.path.abspath(__file__))
+
+log_path = os.path.join(get_executable_dir(), 'log.yml')
+config_path = os.path.join(get_executable_dir(), 'config.ini')
 config = configparser.ConfigParser()
 config.read(config_path, encoding='utf-8')
 
@@ -45,7 +54,7 @@ class WebSocketClient:
             return
         try:
             write_log("正在嘗試連接 WebSocket...")
-            ws_url = f"{WEBSOCKET_URL}/websocket/{USER_NAME}"
+            ws_url = f"{WEBSOCKET_URL}/websocket/{quote(USER_NAME)}/{SERVICE_VERSION}"
             self.ws = websocket.WebSocketApp(
                 ws_url,
                 on_open=self.on_open,
@@ -89,6 +98,8 @@ class WebSocketClient:
 
     def on_error(self, ws, error):
         write_log(f"WebSocket 錯誤: {error}")
+        if isinstance(error, json.JSONDecodeError):
+            write_log("可能的原因是服務器返回了無效的 JSON 消息。")
         self.reconnect()
 
     def send_heartbeat(self):
@@ -97,7 +108,13 @@ class WebSocketClient:
         while self.running:
             try:
                 if self.ws and self.ws.sock and self.ws.sock.connected:
-                    heartbeat_msg = f'{{"type": "heartbeat", "user": "{USER_NAME}", "timestamp": "{int(time.time())}", "vmcount": "{manage.count_virtual_machine_processes()}"}}'
+                    heartbeat_data = {
+                        "type": "heartbeat",
+                        "user": USER_NAME,
+                        "timestamp": int(time.time()),
+                        "vmcount": manage.count_virtual_machine_processes()
+                    }
+                    heartbeat_msg = json.dumps(heartbeat_data)
                     with self.lock:
                         self.ws.send(heartbeat_msg)
                     # write_log("發送心跳包")
