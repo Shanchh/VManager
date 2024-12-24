@@ -20,6 +20,16 @@ export const get_my_profile = async (email: string | null) => {
     }
 }
 
+export const get_my_data = async () => {
+    try {
+        const res = await axios.get("/get_my_data");
+        return res.data?.message;
+    }
+    catch (err) {
+        throw err;
+    }
+}
+
 export const get_all_account_data = async () => {
     try {
         const res = await axios.get("/get_all_account_data");
@@ -43,6 +53,16 @@ export const list_connected = async () => {
 export const call_operation = async (command: any) => {
     try {
         const res = await axios.post("/api", command);
+        return res.data.message;
+    }
+    catch (err) {
+        throw err;
+    }
+}
+
+export const register_vmware = async () => {
+    try {
+        const res = await axios.post("/register_vmware");
         return res.data.message;
     }
     catch (err) {

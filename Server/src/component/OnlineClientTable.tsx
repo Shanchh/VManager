@@ -119,6 +119,12 @@ const OnlineClientTable: React.FC<OnlineClientTableProps> = ({ data }) => {
             ),
         },
         {
+            title: '版本',
+            dataIndex: 'version',
+            key: 'version',
+            align: 'center',
+        },
+        {
             title: '操作',
             key: 'action',
             align: 'center',

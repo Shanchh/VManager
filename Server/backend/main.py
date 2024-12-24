@@ -9,11 +9,13 @@ import json
 import auth
 from urllib.parse import unquote
 from datetime import datetime
+from pymongo import ReturnDocument
 
 import requestClass
 
 app = FastAPI()
 # uvicorn main:app --host 127.0.0.1 --port 2666 --reload
+# uvicorn main:app --host 192.168.0.106 --port 2666 --reload
 
 connected_clients = {}
 
@@ -60,6 +62,25 @@ async def get_my_profile(request: Request, body: requestClass.GetProfileRequest)
 
     return {"message": userData}
 
+@app.get("/get_my_data")
+@auth.login_required
+async def get_my_data(request: Request):
+    try:
+        user = auth.get_current_user(request)
+
+        collection = db['Users']
+        user = collection.find_one({"email": user.email})
+        user['_id'] = str(user['_id'])
+
+        result = {
+            "code": 0,
+            "message": user
+        }
+        
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"取得帳號資料時發生錯誤, {e}")
+
 @app.get("/get_all_account_data")
 @auth.login_required
 async def get_all_account_data(request: Request):
@@ -86,30 +107,43 @@ async def get_all_account_data(request: Request):
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"取得帳號列表時發生錯誤, {e}")
 
-@app.post("/register")
-async def register(request: requestClass.RegisterRequest):
-    username = request.username
-    account = request.account
-    password = request.password
+@app.post("/register_vmware")
+@auth.login_required
+async def register_vmware(request: Request):
+    try:
+        user = auth.get_current_user(request)
 
-    collection = db['Accounts']
+        collection = db['Users']
+        user = collection.find_one_and_update(
+            {"email": user.email},
+            {"$set": {"VMisCreate": True}},
+            return_document=ReturnDocument.AFTER
+        )
 
-    existing_user = collection.find_one({"account": account})
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Account already exists")
+        if not user:
+            raise HTTPException(status_code=404, detail="找不到指令用戶")
 
-    VMword = ''.join(random.choices(string.ascii_letters + string.digits, k=48))
+        collection = db['Accounts']
+        VMword = ''.join(random.choices(string.ascii_letters + string.digits, k=48))
+        insert_data = {
+            "nickname": user['nickname'],
+            "email": user['email'],
+            "VMword": VMword,
+            "createAt": int(time.time())
+        }
+        r = collection.insert_one(insert_data)
 
-    new_user = {
-        "username": username,
-        "account": account,
-        "password": password,
-        "VMword": VMword
-    }
-    
-    collection.insert_one(new_user)
-
-    return {"message": "Account registered successfully", "username": username, "account": account, "VMword": VMword}
+        result = {
+            "code": 0,
+            "message": {
+                "VMword": VMword,
+                "inserted_id": str(r.inserted_id)
+            }
+        }
+        
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"創建虛擬機帳號時發生錯誤, {e}")
 
 @app.post("/login")
 async def login(request: requestClass.RegisterRequest):
@@ -228,8 +262,8 @@ async def api(request: Request, body: requestClass.ApiRequest):
     else:
         raise HTTPException(status_code=400, detail="無效Method.")
 
-@app.websocket("/websocket/{username}")
-async def websocket_endpoint(websocket: WebSocket, username: str):
+@app.websocket("/websocket/{username}/{version}")
+async def websocket_endpoint(websocket: WebSocket, username: str, version: str):
     username = unquote(username)
     collection = db['Users']
     existing_user = collection.find_one({"nickname": username})
@@ -251,7 +285,8 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
         "username": username,
         "connected_at": int(time.time()),
         "vmcount": 0,
-        "ip": client_ip
+        "ip": client_ip,
+        "version": version
     }
 
     try:
@@ -260,12 +295,20 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
             message = await websocket.receive_text()
             print(f"收到訊息來自 {username}: {message}")
 
-            message = json.loads(message)
+            if not message.strip():
+                print(f"收到空消息來自 {username}")
+                continue
+
+            try:
+                message = json.loads(message)
+            except json.JSONDecodeError:
+                print(f"無效的 JSON 消息來自 {username}: {message}")
+                await websocket.send_text("無效的消息格式，請發送正確的 JSON")
+                continue
+
             if message['type'] == "heartbeat":
                 heartbeat_process(username, message)
 
-            # # 回傳回聲消息
-            # await websocket.send_text(f"Echo: {message}")
     except WebSocketDisconnect:
         print(f"用戶 {username} 已斷開連線.")
     except Exception as e:
