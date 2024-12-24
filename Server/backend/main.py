@@ -14,6 +14,7 @@ import requestClass
 
 app = FastAPI()
 # uvicorn main:app --host 127.0.0.1 --port 2666 --reload
+# uvicorn main:app --host 192.168.0.106 --port 2666 --reload
 
 connected_clients = {}
 
@@ -228,8 +229,8 @@ async def api(request: Request, body: requestClass.ApiRequest):
     else:
         raise HTTPException(status_code=400, detail="無效Method.")
 
-@app.websocket("/websocket/{username}")
-async def websocket_endpoint(websocket: WebSocket, username: str):
+@app.websocket("/websocket/{username}/{version}")
+async def websocket_endpoint(websocket: WebSocket, username: str, version: str):
     username = unquote(username)
     collection = db['Users']
     existing_user = collection.find_one({"nickname": username})
@@ -251,7 +252,8 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
         "username": username,
         "connected_at": int(time.time()),
         "vmcount": 0,
-        "ip": client_ip
+        "ip": client_ip,
+        "version": version
     }
 
     try:
@@ -260,12 +262,20 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
             message = await websocket.receive_text()
             print(f"收到訊息來自 {username}: {message}")
 
-            message = json.loads(message)
+            if not message.strip():
+                print(f"收到空消息來自 {username}")
+                continue
+
+            try:
+                message = json.loads(message)
+            except json.JSONDecodeError:
+                print(f"無效的 JSON 消息來自 {username}: {message}")
+                await websocket.send_text("無效的消息格式，請發送正確的 JSON")
+                continue
+
             if message['type'] == "heartbeat":
                 heartbeat_process(username, message)
 
-            # # 回傳回聲消息
-            # await websocket.send_text(f"Echo: {message}")
     except WebSocketDisconnect:
         print(f"用戶 {username} 已斷開連線.")
     except Exception as e:
