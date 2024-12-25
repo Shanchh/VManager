@@ -12,6 +12,7 @@ from datetime import datetime
 from pymongo import ReturnDocument
 
 import requestClass
+import log_event
 
 app = FastAPI()
 # uvicorn main:app --host 127.0.0.1 --port 2666 --reload
@@ -20,6 +21,12 @@ app = FastAPI()
 connected_clients = {}
 
 admin_permissions = ['admin', 'onwer']
+
+def get_client_ip(request: Request) -> str:
+    client_ip = request.headers.get("x-forwarded-for")
+    if client_ip:
+        return client_ip.split(",")[0].strip()
+    return request.client.host
 
 @app.post("/create_user")
 async def create_user(request: requestClass.CreateUserRequest):
@@ -106,6 +113,29 @@ async def get_all_account_data(request: Request):
         return result
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"取得帳號列表時發生錯誤, {e}")
+    
+@app.get("/get_my_20_activities")
+@auth.login_required
+async def get_my_20_activities(request: Request):
+    try:
+        user = auth.get_current_user(request)
+
+        user = db['Users'].find_one({"email": user.email})
+
+        collection = db['Logs']
+        logs = list(collection.find({"requester.id": str(user['_id'])}).sort("timestamp", -1).limit(9))
+
+        for log in logs:
+            log['_id'] = str(log['_id'])
+
+        result = {
+            "code": 0,
+            "message": logs
+        }
+
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"取得動態時發生錯誤, {e}")
 
 @app.post("/register_vmware")
 @auth.login_required
@@ -140,6 +170,8 @@ async def register_vmware(request: Request):
                 "inserted_id": str(r.inserted_id)
             }
         }
+
+        log_event.insert_log("INFO", user, None, "register_vmware", "註冊虛擬機", get_client_ip(request))
         
         return result
     except Exception as e:
@@ -250,14 +282,17 @@ async def api(request: Request, body: requestClass.ApiRequest):
         username = content.get("username")
 
         if username not in connected_clients:
+            log_event.insert_log("ERROR", user, db['Users'].find_one({"nickname": username}), "operation_command", f"對[{username}]使用{method}指令失敗: 裝置ID無效", get_client_ip(request))
             raise HTTPException(status_code=404, detail=f"裝置ID無效 [{username}]")
 
         try:
             websocket = connected_clients[username]['websocket']
             await websocket.send_text(method)
+            log_event.insert_log("INFO", user, db['Users'].find_one({"nickname": username}), "operation_command", f"對[{username}]使用{method}指令成功", get_client_ip(request))
             return JSONResponse(content={"status": "success", "message": f"{method} 已傳送至 {username}"})
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"傳送 {method} 指令失敗: {str(e)}")
+            log_event.insert_log("ERROR", user, db['Users'].find_one({"nickname": username}), "operation_command", f"對[{username}]使用{method}指令失敗: {str(e)}", get_client_ip(request))
+            raise HTTPException(status_code=500, detail=f"傳送 {method} 指令失敗: {str(e)}") 
 
     else:
         raise HTTPException(status_code=400, detail="無效Method.")
@@ -288,6 +323,7 @@ async def websocket_endpoint(websocket: WebSocket, username: str, version: str):
         "ip": client_ip,
         "version": version
     }
+    log_event.insert_log("INFO", existing_user, None, "websocket_connect", "已連線上伺服器主機", client_ip)
 
     try:
         while True:
@@ -311,8 +347,10 @@ async def websocket_endpoint(websocket: WebSocket, username: str, version: str):
 
     except WebSocketDisconnect:
         print(f"用戶 {username} 已斷開連線.")
+        log_event.insert_log("INFO", existing_user, None, "websocket_disconnect", "已中斷伺服器主機連線", client_ip)
     except Exception as e:
         print(f"WebSocket 錯誤. 來自 {username}: {e}")
+        log_event.insert_log("ERROR", existing_user, None, "websocket_connect_error", "已中斷伺服器主機連線", client_ip)
     finally:
         # 移除斷開的連接
         connected_clients.pop(username, None)
