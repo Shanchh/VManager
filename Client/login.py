@@ -8,10 +8,20 @@ import configparser
 import os
 from datetime import datetime
 from filelock import FileLock, Timeout
+import getpass
+import sys
+
+FIREBASE_API_KEY = "AIzaSyABKsYLS-KImX4S1TvM_vYoyAIFyrENnr4"
 
 lockfile = 'app.lock'
 
-config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
+def get_executable_dir():
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        return os.path.dirname(sys.executable)
+    else:
+        return os.path.dirname(os.path.abspath(__file__))
+
+config_path = os.path.join(get_executable_dir(), 'config.ini')
 config = configparser.ConfigParser()
 config.read(config_path, encoding='utf-8')
 
@@ -74,28 +84,59 @@ class Client:
 def startLogin():
     try:
         while True:
-            account = input(f"{get_time_now()}請輸入帳號：")
-            password = input(f"{get_time_now()}請輸入密碼：")
+            email = input(f"{get_time_now()}請輸入信箱：")
+            password = getpass.getpass(f"{get_time_now()}請輸入密碼：")
 
-            response = requests.post(f"{SERVER_URL}/login", json={"username": USER_NAME, "account": account, "password": password})
+            print(f"{get_time_now()}登入中請稍後....")
+
+            firebase_login_url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_API_KEY}"
+            payload = {
+                "email": email,
+                "password": password,
+                "returnSecureToken": True
+            }
+
+            response = requests.post(firebase_login_url, json=payload)
+
             if response.status_code == 200:
                 data = response.json()
-                if data["status"] == "success":
-                    client = Client(data['VMword'], VMRUN_PATH, VMX_PATH)
-                    client.login_VM()
-                    break
-                else:
-                    print(f"{get_time_now()}密碼錯誤！\n━")
+                id_token = data["idToken"]
+                if postLogin(email, id_token):
+                    print(f"{get_time_now()}登入成功！程式即將結束。")
+                    sys.exit(0)
             else:
-                try:
-                    error_detail = response.json().get("detail", "Unknown error")
-                    print(f"{get_time_now()}登入失敗！原因：{error_detail}\n━")
-                except ValueError:
-                    print(f"{get_time_now()}登入失敗！無法解析伺服器的回應內容。\n━")
+                error_info = response.json().get("error", {}).get("message", "Unknown error")
+                print(f"{get_time_now()}登入失敗！原因：{error_info}\n━")
 
     except Exception as e:
         print(f"{get_time_now()}登入時發生錯誤, Error:{e}")
         return
+
+def postLogin(email, id_token, max_retries=10):
+    retry_count = 0
+    while retry_count < max_retries:
+        response = requests.post(f"{SERVER_URL}/login", json={"username": USER_NAME, "email": email, "password": id_token})
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("status") == "success":
+                client = Client(data['VMword'], VMRUN_PATH, VMX_PATH)
+                client.login_VM()
+                return True
+            else:
+                print(f"{get_time_now()}密碼錯誤！\n━")
+                return False
+        else:
+            try:
+                error_detail = response.json().get("detail", "Unknown error")
+                print(f"{get_time_now()}登入失敗！原因：{error_detail}\n━")
+                return False
+            except ValueError:
+                pass
+        retry_count += 1
+        time.sleep(2)
+
+    print(f"{get_time_now()}登入重試次數已達上限 ({max_retries})\n━")
+    return False
 
 def main():
     lock = FileLock(lockfile) # 檔案鎖

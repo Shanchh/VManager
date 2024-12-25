@@ -124,7 +124,6 @@ class WebSocketClient:
 
             popup.geometry(f"{window_width}x{window_height}+{x}+{y}")
             popup.update()
-            print(f"Popup geometry set to: {window_width}x{window_height}+{x}+{y}")
 
             popup.attributes("-topmost", True)
             popup.configure(bg="black")
