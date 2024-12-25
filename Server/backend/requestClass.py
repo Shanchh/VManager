@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 class RegisterRequest(BaseModel):
     username: str
-    account: str
+    email: str
     password: str
 
 class ApiRequest(BaseModel):

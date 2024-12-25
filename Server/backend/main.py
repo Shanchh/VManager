@@ -6,13 +6,14 @@ import string
 from config.setting import db
 import time
 import json
-import auth
+import auth as auth
 from urllib.parse import unquote
 from datetime import datetime
 from pymongo import ReturnDocument
 
 import requestClass
 import log_event
+import firebaseConfig
 
 app = FastAPI()
 # uvicorn main:app --host 127.0.0.1 --port 2666 --reload
@@ -179,27 +180,38 @@ async def register_vmware(request: Request):
 
 @app.post("/login")
 async def login(request: requestClass.RegisterRequest):
-    username = request.username
-    account = request.account
-    password = request.password
+    try:
+        email = request.email
+        password = request.password
 
-    collection = db['Accounts']
-    user = collection.find_one({"account": account})
-    if not user:
-        raise HTTPException(status_code=401, detail="Account not found")
-    
-    if username not in connected_clients:
-        raise HTTPException(status_code=401, detail="Service startup not detected")
-    
-    if bcrypt.verify(password, user["password"]):
-        clientId = ''.join(random.choices(string.ascii_letters + string.digits, k=20))
+        user = firebaseConfig.auth.get_user_by_email(email)
+        if not user:
+            raise HTTPException(status_code=401, detail="帳號不存在")
+
+        id_token = password
+        decoded_token = firebaseConfig.auth.verify_id_token(id_token)
+        uid = decoded_token.get("uid")
+
+        user = firebaseConfig.auth.get_user(uid)
+        if user.disabled:
+            raise HTTPException(status_code=403, detail="帳號被禁用")
+
+        # 从数据库中获取用户信息
+        collection = db["Accounts"]
+        user_data = collection.find_one({"email": email})
+        if not user_data:
+            raise HTTPException(status_code=404, detail="帳號不存在")
+
         return JSONResponse(content={
             "status": "success",
-            "clientId": clientId,
-            "VMword": user['VMword']
+            "VMword": user_data["VMword"]
         })
-    else:
-        raise HTTPException(status_code=401, detail="Invalid password")
+
+        raise HTTPException(status_code=401, detail="帳號被禁用")
+    except firebaseConfig.auth.AuthError as e:
+        raise HTTPException(status_code=401, detail="帳號認證失敗")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="伺服器錯誤")
     
 @app.get("/list_connected")
 @auth.login_required
@@ -339,7 +351,6 @@ async def websocket_endpoint(websocket: WebSocket, username: str, version: str):
                 message = json.loads(message)
             except json.JSONDecodeError:
                 print(f"無效的 JSON 消息來自 {username}: {message}")
-                await websocket.send_text("無效的消息格式，請發送正確的 JSON")
                 continue
 
             if message['type'] == "heartbeat":

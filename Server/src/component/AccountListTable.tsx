@@ -98,14 +98,7 @@ const AccountListTable: React.FC<AccountListTableProps> = ({ data }) => {
             align: 'center',
             render: (data: Account) => (
                 <Flex justify="center" align="center" gap={5}>
-                    <Popconfirm placement="top" title="刪除資料庫" description={`確定要重製嗎？`} okText="確認" cancelText="取消">
-                        <Button
-                            type="default"
-                            style={{ height: 25, width: 45 }}
-                        >重製
-                        </Button>
-                    </Popconfirm>
-                    <Popconfirm placement="top" title="刪除資料庫" description={`確定要刪除嗎？`} okText="確認" cancelText="取消">
+                    <Popconfirm placement="top" title="刪除用戶" description={`確定要刪除嗎？`} okText="確認" cancelText="取消">
                         <Button
                             type="default"
                             style={{ height: 25, width: 45 }}
