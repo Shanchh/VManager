@@ -69,3 +69,13 @@ export const register_vmware = async () => {
         throw err;
     }
 }
+
+export const get_my_20_activities = async () => {
+    try {
+        const res = await axios.get("/get_my_20_activities");
+        return res.data.message;
+    }
+    catch (err) {
+        throw err;
+    }
+}
