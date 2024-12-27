@@ -19,6 +19,8 @@ class GetProfileRequest(BaseModel):
 class oneClickOperationClass(BaseModel):
     operation: str
 
-
 class oneClickBroadcastClass(BaseModel):
     content: str
+
+class deleteAccountClass(BaseModel):
+    data: dict

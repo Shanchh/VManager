@@ -330,6 +330,41 @@ async def oneclick_broadcast(request: Request, body: requestClass.oneClickBroadc
     except Exception as e:
         log_event.insert_log("ERROR", user, None, "oneclick_operation", f"對全體成員廣播時發生錯誤！", get_client_ip(request))
         raise HTTPException(status_code=400, detail=f"管理員一鍵操作時發生錯誤, {e}")
+    
+@app.post("/delete_account")
+@auth.login_required
+async def delete_account(request: Request, body: requestClass.deleteAccountClass):
+    try:
+        user = auth.get_current_user(request)
+
+        collection = db['Users']
+        user = collection.find_one({"email": user.email})
+
+        if user['role'] not in ['admin', 'owner']:
+            raise HTTPException(status_code=400, detail="Insufficient account permissions")
+        
+        account = body.data
+
+        firebase_account = firebaseConfig.auth.get_user_by_email(account['email'])
+        firebaseConfig.auth.delete_user(firebase_account.uid)
+
+        collection.delete_one({"email": account['email']})
+
+        collection = db['Accounts']
+        collection.delete_one({"email": account['email']})
+
+        result = {
+            'code': 0,
+            'message': f"成功刪除帳號"
+        }
+        
+        log_event.insert_log("INFO", user, account, "delete_account", f"刪除了 {account['nickname']} 的帳號！", get_client_ip(request))
+
+        return result
+
+    except Exception as e:
+        log_event.insert_log("ERROR", user, None, "oneclick_operation", f"刪除 {account['nickname']} 帳號時發生錯誤！", get_client_ip(request))
+        raise HTTPException(status_code=400, detail=f"刪除帳號時發生錯誤！, {e}")
 
 @app.post("/api")
 @auth.login_required

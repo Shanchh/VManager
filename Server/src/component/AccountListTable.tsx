@@ -2,6 +2,7 @@ import { Badge, Button, Flex, Popconfirm, Table, Tag } from 'antd';
 import React, { useState } from 'react';
 import type { TableProps } from 'antd';
 import { Account } from '../../type';
+import DeleteAccountBtn from './DeleteAccountBtn';
 
 interface AccountListTableProps {
     data: Account[];
@@ -97,15 +98,7 @@ const AccountListTable: React.FC<AccountListTableProps> = ({ data }) => {
             key: 'action',
             align: 'center',
             render: (data: Account) => (
-                <Flex justify="center" align="center" gap={5}>
-                    <Popconfirm placement="top" title="刪除用戶" description={`確定要刪除嗎？`} okText="確認" cancelText="取消">
-                        <Button
-                            type="default"
-                            style={{ height: 25, width: 45 }}
-                        >刪除
-                        </Button>
-                    </Popconfirm>
-                </Flex>
+                <DeleteAccountBtn data={data}/>
             ),
         },
     ];
