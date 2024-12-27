@@ -1,5 +1,7 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from passlib.hash import bcrypt
 import random
 import string
@@ -10,6 +12,7 @@ import auth as auth
 from urllib.parse import unquote
 from datetime import datetime
 from pymongo import ReturnDocument
+import uvicorn
 
 import requestClass
 import log_event
@@ -18,6 +21,17 @@ import firebaseConfig
 app = FastAPI()
 # uvicorn main:app --host 127.0.0.1 --port 2666 --reload
 # uvicorn main:app --host 192.168.0.106 --port 2666 --reload
+
+app.mount("/static", StaticFiles(directory="build/static"), name="static")
+
+@app.get("/")
+async def serve_root():
+    return FileResponse("build/index.html")
+
+# 提供其他路径的文件，支持 React 的路由
+@app.get("/{path:path}")
+async def serve_other_paths(path: str):
+    return FileResponse("build/index.html")
 
 connected_clients = {}
 
@@ -70,7 +84,7 @@ async def get_my_profile(request: Request, body: requestClass.GetProfileRequest)
 
     return {"message": userData}
 
-@app.get("/get_my_data")
+@app.post("/get_my_data")
 @auth.login_required
 async def get_my_data(request: Request):
     try:
@@ -89,7 +103,7 @@ async def get_my_data(request: Request):
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"取得帳號資料時發生錯誤, {e}")
 
-@app.get("/get_all_account_data")
+@app.post("/get_all_account_data")
 @auth.login_required
 async def get_all_account_data(request: Request):
     try:
@@ -115,7 +129,7 @@ async def get_all_account_data(request: Request):
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"取得帳號列表時發生錯誤, {e}")
     
-@app.get("/get_my_20_activities")
+@app.post("/get_my_20_activities")
 @auth.login_required
 async def get_my_20_activities(request: Request):
     try:
@@ -213,7 +227,7 @@ async def login(request: requestClass.RegisterRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail="伺服器錯誤")
     
-@app.get("/list_connected")
+@app.post("/list_connected")
 @auth.login_required
 async def list_connected(request: Request):
     try:
@@ -255,6 +269,116 @@ async def list_connected(request: Request):
         return result
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"取得線上裝置列表時發生錯誤, {e}")
+    
+@app.post("/oneclick_operation")
+@auth.login_required
+async def oneclick_operation(request: Request, body: requestClass.oneClickOperationClass):
+    try:
+        user = auth.get_current_user(request)
+
+        collection = db['Users']
+        user = collection.find_one({"email": user.email})
+
+        if user['role'] not in ['admin', 'owner']:
+            raise HTTPException(status_code=400, detail="Insufficient account permissions")
+        
+        operation = body.operation
+        operation_command_list = ['close_vmware_workstation', 'restart_computer', 'shutdown_computer']
+        
+        if operation in operation_command_list:
+            await oneclick_operation_process(request, user, operation)
+            result = {
+                'code': 0,
+                'message': f"成功執行一鍵指令: {operation}"
+            }
+            return result
+        else:
+            log_event.insert_log("ERROR", user, None, "oneclick_operation", f"對全體成員進行未知指令，已被拒絕！", get_client_ip(request))
+            raise HTTPException(status_code=404, detail=f"未知一鍵指令, {e}")
+
+    except Exception as e:
+        log_event.insert_log("ERROR", user, None, "oneclick_operation", f"對全體成員進行 {operation} 指令時發生錯誤！", get_client_ip(request))
+        raise HTTPException(status_code=400, detail=f"管理員一鍵操作時發生錯誤, {e}")
+    
+async def oneclick_operation_process(request, user, operation):
+    for key in connected_clients:
+        websocket = connected_clients[key]['websocket']
+
+        if not websocket:
+            log_event.insert_log("WARN", user, None, "oneclick_operation", f"對全體成員進行 {operation} 時於用戶 {connected_clients[key]['username']} 連線錯誤！", get_client_ip(request))
+            continue
+
+        await websocket.send_text(operation)
+    log_event.insert_log("INFO", user, None, "oneclick_operation", f"對全體成員進行了 {operation} 指令。", get_client_ip(request))
+
+@app.post("/oneclick_broadcast")
+@auth.login_required
+async def oneclick_broadcast(request: Request, body: requestClass.oneClickBroadcastClass):
+    try:
+        user = auth.get_current_user(request)
+
+        collection = db['Users']
+        user = collection.find_one({"email": user.email})
+
+        if user['role'] not in ['admin', 'owner']:
+            raise HTTPException(status_code=400, detail="Insufficient account permissions")
+        
+        content = body.content
+        
+        for key in connected_clients:
+            websocket = connected_clients[key]['websocket']
+            if not websocket:    
+                print(f"{user['nickname']}對全體成員廣播時於用戶 {connected_clients[key]['username']} 連線錯誤！")
+                log_event.insert_log("WARN", user, None, "oneclick_operation", f"對全體成員廣播時於用戶 {connected_clients[key]['username']} 連線錯誤！", get_client_ip(request))
+            await websocket.send_text(content)
+
+            result = {
+                'code': 0,
+                'message': f"成功執行一鍵廣播"
+            }
+        
+        log_event.insert_log("INFO", user, None, "oneclick_operation", f"對全體成員廣播！", get_client_ip(request))
+
+        return result
+
+    except Exception as e:
+        log_event.insert_log("ERROR", user, None, "oneclick_operation", f"對全體成員廣播時發生錯誤！", get_client_ip(request))
+        raise HTTPException(status_code=400, detail=f"管理員一鍵操作時發生錯誤, {e}")
+    
+@app.post("/delete_account")
+@auth.login_required
+async def delete_account(request: Request, body: requestClass.deleteAccountClass):
+    try:
+        user = auth.get_current_user(request)
+
+        collection = db['Users']
+        user = collection.find_one({"email": user.email})
+
+        if user['role'] not in ['admin', 'owner']:
+            raise HTTPException(status_code=400, detail="Insufficient account permissions")
+        
+        account = body.data
+
+        firebase_account = firebaseConfig.auth.get_user_by_email(account['email'])
+        firebaseConfig.auth.delete_user(firebase_account.uid)
+
+        collection.delete_one({"email": account['email']})
+
+        collection = db['Accounts']
+        collection.delete_one({"email": account['email']})
+
+        result = {
+            'code': 0,
+            'message': f"成功刪除帳號"
+        }
+        
+        log_event.insert_log("INFO", user, account, "delete_account", f"刪除了 {account['nickname']} 的帳號！", get_client_ip(request))
+
+        return result
+
+    except Exception as e:
+        log_event.insert_log("ERROR", user, None, "oneclick_operation", f"刪除 {account['nickname']} 帳號時發生錯誤！", get_client_ip(request))
+        raise HTTPException(status_code=400, detail=f"刪除帳號時發生錯誤！, {e}")
 
 @app.post("/api")
 @auth.login_required
@@ -379,3 +503,6 @@ def heartbeat_process(username, message):
         )
     except Exception as e:
         print(f"Heartbeat 處理錯誤. 來自 {username}: {e}")
+
+if __name__ == '__main__':
+    uvicorn.run("main:app", host="127.0.0.1", port=2626, reload=True)

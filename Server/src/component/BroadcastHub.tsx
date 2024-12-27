@@ -5,31 +5,38 @@ import { call_operation } from '../api/ProcessApi';
 
 interface BroadcastHubProps {
     data: Client;
+    setModal1Open: (value: boolean) => void;
 }
 
 const { TextArea } = Input;
 
-const BroadcastHub: React.FC<BroadcastHubProps> = ({ data }) => {
+const BroadcastHub: React.FC<BroadcastHubProps> = ({ data, setModal1Open }) => {
     const [text, setText] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
 
     const onBoardcast = async () => {
-        setLoading(true);
-        if (!text) {
-            message.error("請輸入訊息內容！");
-            setLoading(false);
-            return;
-        }
-
-        const command = {
-            method: "message",
-            content: {
-                username: data.username,
-                msg: text
+        try{
+            setLoading(true);
+            if (!text) {
+                message.error("請輸入訊息內容！");
+                setLoading(false);
+                return;
             }
+    
+            const command = {
+                method: "message",
+                content: {
+                    username: data.username,
+                    msg: text
+                }
+            }
+            call_operation(command);
+            message.success(`已成功廣播 ${text} 給${data.username}`)
+            setModal1Open(false);
+            setLoading(false);
+        } catch {
+            message.error("廣播訊息失敗！")
         }
-        call_operation(command);
-        setLoading(false);
     };
     return (
         <Flex vertical justify='start' align='start' gap={5} style={{ width: '100%', paddingTop: 10 }}>

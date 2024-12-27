@@ -8,6 +8,7 @@ import MyProfile from './pages/content/MyProfile';
 import Setting from './pages/main/Setting';
 import UserManage from './pages/content/UserManage';
 import OnlineManage from './pages/content/OnlineManage';
+import HomePage from './pages/content/HomePage';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
 
             <Route element={<ProtectedRoute />}>
               <Route path="/" element={<Home />}>
+                <Route path="/" element={<HomePage />} />
                 <Route path="/my-profile" element={<MyProfile />} />
                 
                 <Route path="/management/online-manage" element={<OnlineManage />} />
