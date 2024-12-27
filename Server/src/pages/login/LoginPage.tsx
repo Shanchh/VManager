@@ -13,10 +13,6 @@ const LoginFormPage: React.FC = () => {
         justifyContent: "center",
         alignItems: "center",
         backgroundColor: '#ffffff',
-        backgroundImage: "url('/loginbackground.jpg')",
-        backgroundSize: 'cover',
-        backgroundRepeat: 'no-repeat',
-        backgroundPosition: 'center',
       }}
     >
       {isRegister ? (

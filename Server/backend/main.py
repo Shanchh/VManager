@@ -1,5 +1,7 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from passlib.hash import bcrypt
 import random
 import string
@@ -10,6 +12,7 @@ import auth as auth
 from urllib.parse import unquote
 from datetime import datetime
 from pymongo import ReturnDocument
+import uvicorn
 
 import requestClass
 import log_event
@@ -18,6 +21,17 @@ import firebaseConfig
 app = FastAPI()
 # uvicorn main:app --host 127.0.0.1 --port 2666 --reload
 # uvicorn main:app --host 192.168.0.106 --port 2666 --reload
+
+app.mount("/static", StaticFiles(directory="build/static"), name="static")
+
+@app.get("/")
+async def serve_root():
+    return FileResponse("build/index.html")
+
+# 提供其他路径的文件，支持 React 的路由
+@app.get("/{path:path}")
+async def serve_other_paths(path: str):
+    return FileResponse("build/index.html")
 
 connected_clients = {}
 
@@ -70,7 +84,7 @@ async def get_my_profile(request: Request, body: requestClass.GetProfileRequest)
 
     return {"message": userData}
 
-@app.get("/get_my_data")
+@app.post("/get_my_data")
 @auth.login_required
 async def get_my_data(request: Request):
     try:
@@ -89,7 +103,7 @@ async def get_my_data(request: Request):
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"取得帳號資料時發生錯誤, {e}")
 
-@app.get("/get_all_account_data")
+@app.post("/get_all_account_data")
 @auth.login_required
 async def get_all_account_data(request: Request):
     try:
@@ -115,7 +129,7 @@ async def get_all_account_data(request: Request):
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"取得帳號列表時發生錯誤, {e}")
     
-@app.get("/get_my_20_activities")
+@app.post("/get_my_20_activities")
 @auth.login_required
 async def get_my_20_activities(request: Request):
     try:
@@ -213,7 +227,7 @@ async def login(request: requestClass.RegisterRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail="伺服器錯誤")
     
-@app.get("/list_connected")
+@app.post("/list_connected")
 @auth.login_required
 async def list_connected(request: Request):
     try:
@@ -489,3 +503,6 @@ def heartbeat_process(username, message):
         )
     except Exception as e:
         print(f"Heartbeat 處理錯誤. 來自 {username}: {e}")
+
+if __name__ == '__main__':
+    uvicorn.run("main:app", host="127.0.0.1", port=2626, reload=True)

@@ -15,7 +15,6 @@ const HomePage = () => {
     return (
         <Flex vertical gap={10}>
             <Flex gap={5} justify='center' align='center' style={{ height: 50, width: '100%' }}>
-                <Avatar shape="square" size={30} src={'image/logo.jpeg'} style={{ opacity: 0.8 }} />
                 <div style={{ fontSize: 30, fontWeight: 'bold' }}>首頁</div>
             </Flex>
             {userProfile?.role === 'admin' || userProfile?.role === 'owner' ? (
