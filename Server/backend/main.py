@@ -292,11 +292,44 @@ async def oneclick_operation_process(request, user, operation):
 
         if not websocket:
             log_event.insert_log("WARN", user, None, "oneclick_operation", f"對全體成員進行 {operation} 時於用戶 {connected_clients[key]['username']} 連線錯誤！", get_client_ip(request))
-            print("3")
             continue
 
         await websocket.send_text(operation)
     log_event.insert_log("INFO", user, None, "oneclick_operation", f"對全體成員進行了 {operation} 指令。", get_client_ip(request))
+
+@app.post("/oneclick_broadcast")
+@auth.login_required
+async def oneclick_broadcast(request: Request, body: requestClass.oneClickBroadcastClass):
+    try:
+        user = auth.get_current_user(request)
+
+        collection = db['Users']
+        user = collection.find_one({"email": user.email})
+
+        if user['role'] not in ['admin', 'owner']:
+            raise HTTPException(status_code=400, detail="Insufficient account permissions")
+        
+        content = body.content
+        
+        for key in connected_clients:
+            websocket = connected_clients[key]['websocket']
+            if not websocket:    
+                print(f"{user['nickname']}對全體成員廣播時於用戶 {connected_clients[key]['username']} 連線錯誤！")
+                log_event.insert_log("WARN", user, None, "oneclick_operation", f"對全體成員廣播時於用戶 {connected_clients[key]['username']} 連線錯誤！", get_client_ip(request))
+            await websocket.send_text(content)
+
+            result = {
+                'code': 0,
+                'message': f"成功執行一鍵廣播"
+            }
+        
+        log_event.insert_log("INFO", user, None, "oneclick_operation", f"對全體成員廣播！", get_client_ip(request))
+
+        return result
+
+    except Exception as e:
+        log_event.insert_log("ERROR", user, None, "oneclick_operation", f"對全體成員廣播時發生錯誤！", get_client_ip(request))
+        raise HTTPException(status_code=400, detail=f"管理員一鍵操作時發生錯誤, {e}")
 
 @app.post("/api")
 @auth.login_required

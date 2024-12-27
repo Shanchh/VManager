@@ -89,3 +89,13 @@ export const call_oneclick_operation = async (command: any) => {
         throw err;
     }
 }
+
+export const call_oneclick_broadcast = async (command: any) => {
+    try {
+        const res = await axios.post("/oneclick_broadcast", command);
+        return res.data.message;
+    }
+    catch (err) {
+        throw err;
+    }
+}
