@@ -15,3 +15,6 @@ class CreateUserRequest(BaseModel):
 
 class GetProfileRequest(BaseModel):
     email: str
+
+class oneClickOperationClass(BaseModel):
+    operation: str

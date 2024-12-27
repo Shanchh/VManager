@@ -33,7 +33,7 @@ const OperateEllipsisBtn: React.FC<OperateEllipsisBtnProps> = ({ data }) => {
                     onCancel={() => setModal1Open(false)}
                     footer={null}
                 >
-                    <BroadcastHub data={data}/>
+                    <BroadcastHub data={data} setModal1Open={setModal1Open} />
                 </Modal>
             </Tooltip>
         </Flex>

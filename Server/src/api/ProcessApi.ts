@@ -79,3 +79,13 @@ export const get_my_20_activities = async () => {
         throw err;
     }
 }
+
+export const call_oneclick_operation = async (command: any) => {
+    try {
+        const res = await axios.post("/oneclick_operation", command);
+        return res.data.message;
+    }
+    catch (err) {
+        throw err;
+    }
+}

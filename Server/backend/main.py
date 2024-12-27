@@ -255,6 +255,48 @@ async def list_connected(request: Request):
         return result
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"取得線上裝置列表時發生錯誤, {e}")
+    
+@app.post("/oneclick_operation")
+@auth.login_required
+async def oneclick_operation(request: Request, body: requestClass.oneClickOperationClass):
+    try:
+        user = auth.get_current_user(request)
+
+        collection = db['Users']
+        user = collection.find_one({"email": user.email})
+
+        if user['role'] not in ['admin', 'owner']:
+            raise HTTPException(status_code=400, detail="Insufficient account permissions")
+        
+        operation = body.operation
+        operation_command_list = ['close_vmware_workstation', 'restart_computer', 'shutdown_computer']
+        
+        if operation in operation_command_list:
+            await oneclick_operation_process(request, user, operation)
+            result = {
+                'code': 0,
+                'message': f"成功執行一鍵指令: {operation}"
+            }
+            return result
+        else:
+            log_event.insert_log("ERROR", user, None, "oneclick_operation", f"對全體成員進行未知指令，已被拒絕！", get_client_ip(request))
+            raise HTTPException(status_code=404, detail=f"未知一鍵指令, {e}")
+
+    except Exception as e:
+        log_event.insert_log("ERROR", user, None, "oneclick_operation", f"對全體成員進行 {operation} 指令時發生錯誤！", get_client_ip(request))
+        raise HTTPException(status_code=400, detail=f"管理員一鍵操作時發生錯誤, {e}")
+    
+async def oneclick_operation_process(request, user, operation):
+    for key in connected_clients:
+        websocket = connected_clients[key]['websocket']
+
+        if not websocket:
+            log_event.insert_log("WARN", user, None, "oneclick_operation", f"對全體成員進行 {operation} 時於用戶 {connected_clients[key]['username']} 連線錯誤！", get_client_ip(request))
+            print("3")
+            continue
+
+        await websocket.send_text(operation)
+    log_event.insert_log("INFO", user, None, "oneclick_operation", f"對全體成員進行了 {operation} 指令。", get_client_ip(request))
 
 @app.post("/api")
 @auth.login_required
