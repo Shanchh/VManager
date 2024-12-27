@@ -5,5 +5,8 @@ export const apiError = (err: any) => {
             window.location.href = "/login";
             alert("token失效。請重新登入。");
         }
+        if (err.response.status === 500) {
+            alert("伺服器連線錯誤");
+        }
     }
 };
