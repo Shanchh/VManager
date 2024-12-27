@@ -40,15 +40,21 @@ class WebSocketClient:
     def __init__(self):
         self.running = True
         self.heartbeat_interval = 5
+        self.retryCount = 0
 
     async def run(self):
         while self.running:
             try:
                 async with websockets.connect(f"{WEBSOCKET_URL}/websocket/{quote(USER_NAME)}/{SERVICE_VERSION}") as websocket:
+                    self.retryCount = 0
                     write_log("已連接到 WebSocket 服務器")
                     await self.handle_connection(websocket)
             except Exception as e:
                 write_log(f"WebSocket 連接失敗: {e}")
+                self.retryCount += 1
+                if self.retryCount >= 6 and manage.count_virtual_machine_processes() > 0:
+                    # write_log(f"重試次數: {self.retryCount}, 強制關閉虛擬機。") 
+                    manage.close_vmware_workstation()
                 await asyncio.sleep(5)  # 重試間隔
 
     async def handle_connection(self, websocket):
