@@ -1,5 +1,5 @@
 import { Flex, message } from 'antd'
-import { PoweroffOutlined, ReloadOutlined, DesktopOutlined } from '@ant-design/icons';
+import { PoweroffOutlined, ReloadOutlined, DesktopOutlined, ChromeOutlined } from '@ant-design/icons';
 import React, { useState } from 'react'
 import { Client } from '../types/type';
 import { call_operation } from '../api/ProcessApi';
@@ -32,6 +32,7 @@ const OnlineClientOperate: React.FC<OnlineClientOperateProps> = ({ data }) => {
             <OperateCheckModal icon={<PoweroffOutlined />} onOperate={onOperate} operate='shutdown_computer' data={data} content='關閉電腦'/>
             <OperateCheckModal icon={<ReloadOutlined />} onOperate={onOperate} operate='restart_computer' data={data} content='重啟電腦'/>
             <OperateCheckModal icon={<DesktopOutlined />} onOperate={onOperate} operate='close_vmware_workstation' data={data} content='關閉虛擬機'/>
+            <OperateCheckModal icon={<ChromeOutlined />} onOperate={onOperate} operate='close_chrome' data={data} content='關閉Chrome'/>
             <OperateEllipsisBtn data={data}/>
         </Flex>
     )
