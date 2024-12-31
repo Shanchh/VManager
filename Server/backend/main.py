@@ -489,6 +489,9 @@ async def websocket_endpoint(websocket: WebSocket, username: str, version: str):
         log_event.insert_log("ERROR", existing_user, None, "websocket_connect_error", "已中斷伺服器主機連線", client_ip)
     finally:
         # 移除斷開的連接
+        if websocket:
+            await websocket.close()
+            log_event.insert_log("WARN", existing_user, None, "websocket_close", "Websocket執行關閉", client_ip)
         connected_clients.pop(username, None)
 
 def heartbeat_process(username, message):
