@@ -96,3 +96,14 @@ def shutdown_computer():
         print("關機命令已執行。")
     except Exception as e:
         print(f"執行關機時發生錯誤: {e}")
+
+def close_chrome():
+    try:
+        result = subprocess.run(['tasklist'], stdout=subprocess.PIPE, text=True)
+        if 'chrome.exe' in result.stdout:
+            os.system("taskkill /F /IM chrome.exe")
+            print("Google Chrome 已關閉")
+        else:
+            print("未偵測到Google Chrome進程")
+    except Exception as e:
+        print(f"關閉Google Chrome進程發生錯誤: {e}")
