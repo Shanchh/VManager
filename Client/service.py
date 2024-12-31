@@ -1,5 +1,4 @@
 import sys
-import threading
 import time
 import configparser
 import os
@@ -8,7 +7,6 @@ import asyncio
 import websockets
 from datetime import datetime
 from urllib.parse import quote
-import tkinter as tk
 
 import manage
 
@@ -97,6 +95,10 @@ class WebSocketClient:
         elif message == "shutdown_computer":
             manage.shutdown_computer()
             await websocket.send(f"{USER_NAME}: shutdown_computer 執行完畢")
+
+        elif message == "close_chrome":
+            manage.close_chrome()
+            await websocket.send(f"{USER_NAME}: close_chrome 執行完畢")
         
         elif message == "usernotregistered":
             write_log("收到 usernotregistered 訊息，停止服務並退出程序。")
@@ -105,42 +107,7 @@ class WebSocketClient:
             write_log("WebSocket 連線已關閉，程序即將結束。")
 
         else:
-            await self.display_broadcast_message(message)
-
-    async def display_broadcast_message(self, message):
-        def show_popup():
-            popup = tk.Tk()
-            popup.overrideredirect(True)
-
-            label = tk.Label(popup, text=message, font=("Arial", 16), bg="black", fg="yellow")
-            label.pack(expand=True, fill="both")
-
-            popup.update()
-
-            label_width = label.winfo_reqwidth()
-            label_height = label.winfo_reqheight()
-
-            screen_width = popup.winfo_screenwidth()
-
-            window_width = max(label_width + 20, 100)
-            window_height = max(label_height + 20, 50)
-
-            x = (screen_width - window_width) // 2
-            y = 20
-
-            popup.geometry(f"{window_width}x{window_height}+{x}+{y}")
-            popup.update()
-
-            popup.attributes("-topmost", True)
-            popup.configure(bg="black")
-            popup.attributes("-alpha", 0.8)
-
-            popup.after(2000, popup.destroy)
-            popup.mainloop()
-
-        threading.Thread(target=show_popup).start()
-
-        await asyncio.sleep(2)
+            write_log(f"非指令訊息 {message}")
 
 async def main():
     client = WebSocketClient()
