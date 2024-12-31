@@ -14,7 +14,7 @@ const QuickActionsCard = () => {
                 <OneClickOperationBtn operate='shutdown_computer' content='關閉電腦' />
                 <OneClickOperationBtn operate='restart_computer' content='重新啟動' />
                 <OneClickOperationBtn operate='close_vmware_workstation' content='關閉虛擬機' />
-                <OneClickBroadcastBtn />
+                <OneClickOperationBtn operate='close_chrome' content='關閉Chrome' />
             </Flex>
         </Card>
     )

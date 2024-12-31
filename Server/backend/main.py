@@ -283,7 +283,7 @@ async def oneclick_operation(request: Request, body: requestClass.oneClickOperat
             raise HTTPException(status_code=400, detail="Insufficient account permissions")
         
         operation = body.operation
-        operation_command_list = ['close_vmware_workstation', 'restart_computer', 'shutdown_computer']
+        operation_command_list = ['close_vmware_workstation', 'restart_computer', 'shutdown_computer', 'close_chrome']
         
         if operation in operation_command_list:
             await oneclick_operation_process(request, user, operation)
@@ -294,7 +294,7 @@ async def oneclick_operation(request: Request, body: requestClass.oneClickOperat
             return result
         else:
             log_event.insert_log("ERROR", user, None, "oneclick_operation", f"對全體成員進行未知指令，已被拒絕！", get_client_ip(request))
-            raise HTTPException(status_code=404, detail=f"未知一鍵指令, {e}")
+            raise HTTPException(status_code=404, detail=f"未知一鍵指令")
 
     except Exception as e:
         log_event.insert_log("ERROR", user, None, "oneclick_operation", f"對全體成員進行 {operation} 指令時發生錯誤！", get_client_ip(request))
@@ -397,7 +397,8 @@ async def api(request: Request, body: requestClass.ApiRequest):
     command = {
         "close_vmware_workstation": "close_vmware_workstation",
         "restart_computer": "restart_computer",
-        "shutdown_computer": "shutdown_computer"
+        "shutdown_computer": "shutdown_computer",
+        "close_chrome": "close_chrome"
     }
     
     if method == "message":
@@ -488,6 +489,9 @@ async def websocket_endpoint(websocket: WebSocket, username: str, version: str):
         log_event.insert_log("ERROR", existing_user, None, "websocket_connect_error", "已中斷伺服器主機連線", client_ip)
     finally:
         # 移除斷開的連接
+        if websocket:
+            await websocket.close()
+            log_event.insert_log("WARN", existing_user, None, "websocket_close", "Websocket執行關閉", client_ip)
         connected_clients.pop(username, None)
 
 def heartbeat_process(username, message):
