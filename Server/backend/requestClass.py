@@ -24,3 +24,6 @@ class oneClickBroadcastClass(BaseModel):
 
 class deleteAccountClass(BaseModel):
     data: dict
+    
+class getServerLogs(BaseModel):
+    level: str

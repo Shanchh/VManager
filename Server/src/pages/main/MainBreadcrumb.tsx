@@ -8,6 +8,7 @@ const breadcrumbNameMap: Record<string, string> = {
     "/management": "管理功能",
     "/management/user-manage": "帳號管理",
     "/management/online-manage": "線上裝置管理",
+    "/server-logs": "後臺日誌",
     "/setting": "設定",
 };
 

@@ -1,6 +1,6 @@
 import React from 'react'
 import { Menu } from 'antd';
-import { BugOutlined, SettingOutlined, UserOutlined, SolutionOutlined, WifiOutlined } from '@ant-design/icons';
+import { BugOutlined, SettingOutlined, UserOutlined, SolutionOutlined, WifiOutlined, CloudServerOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from '../../auth/AuthProvider';
@@ -28,6 +28,14 @@ const OptionList = () => {
                     { key: '/management/user-manage', label: '帳號管理', icon: <SolutionOutlined />, onClick: () => navigate("/management/user-manage") },
                 ],
             }
+        ] : []),
+        ...(userProfile?.role === 'owner' ? [
+            {
+                key: '/server-logs',
+                icon: <CloudServerOutlined />,
+                label: '後臺日誌',
+                onClick: () => navigate("/server-logs"),
+            },
         ] : []),
         {
             key: '/setting',

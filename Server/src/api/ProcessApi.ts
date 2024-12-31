@@ -121,3 +121,17 @@ export const delete_account = async (data: any) => {
         throw err;
     }
 }
+
+export const get_server_logs = async (level: string) => {
+    try {
+        const command = {
+            level: level
+        }
+        const res = await axios.post("/get_server_logs", command);
+        return res.data.message;
+    }
+    catch (err) {
+        apiError(err)
+        throw err;
+    }
+}

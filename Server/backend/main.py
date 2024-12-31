@@ -151,6 +151,34 @@ async def get_my_20_activities(request: Request):
         return result
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"取得動態時發生錯誤, {e}")
+    
+@app.post("/get_server_logs")
+@auth.login_required
+async def get_server_info_logs(request: Request, body: requestClass.getServerLogs):
+    try:
+        user = auth.get_current_user(request)
+
+        user = db['Users'].find_one({"email": user.email})
+
+        if user['role'] not in ['owner']:
+            raise HTTPException(status_code=400, detail="Insufficient account permissions")
+        
+        logLevel = body.level
+
+        collection = db['Logs']
+        logs = list(collection.find({"level": logLevel}).sort("timestamp", -1).limit(100))
+
+        for log in logs:
+            log['_id'] = str(log['_id'])
+
+        result = {
+            "code": 0,
+            "message": logs
+        }
+
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"取得日誌時發生錯誤, {e}")
 
 @app.post("/register_vmware")
 @auth.login_required
