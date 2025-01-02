@@ -507,7 +507,7 @@ async def websocket_endpoint(websocket: WebSocket, username: str, version: str):
                 continue
 
             if message['type'] == "heartbeat":
-                heartbeat_process(username, message)
+                heartbeat_process(websocket, username, message)
 
     except WebSocketDisconnect:
         print(f"用戶 {username} 已斷開連線.")
@@ -528,7 +528,7 @@ async def websocket_endpoint(websocket: WebSocket, username: str, version: str):
             if removed_client:
                 log_event.insert_log("DEBUG", existing_user, None, "client_removed", f"連線記錄已清理", client_ip)
 
-def heartbeat_process(username, message):
+async def heartbeat_process(websocket, username, message):
     try:
         vmcount = int(message['vmcount'])
         if connected_clients[username]['vmcount'] != vmcount:
@@ -539,6 +539,7 @@ def heartbeat_process(username, message):
             {"nickname": username},
             {"$inc": {"heartbeatCount": 1}}
         )
+        await websocket.send_text("pong")
     except Exception as e:
         print(f"Heartbeat 處理錯誤. 來自 {username}: {e}")
 
