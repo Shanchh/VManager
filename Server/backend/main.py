@@ -2,7 +2,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Requ
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from passlib.hash import bcrypt
+from websockets.exceptions import ConnectionClosed
 import random
 import string
 from config.setting import db
@@ -514,13 +514,19 @@ async def websocket_endpoint(websocket: WebSocket, username: str, version: str):
         log_event.insert_log("INFO", existing_user, None, "websocket_disconnect", "已中斷伺服器主機連線", client_ip)
     except Exception as e:
         print(f"WebSocket 錯誤. 來自 {username}: {e}")
-        log_event.insert_log("ERROR", existing_user, None, "websocket_connect_error", "已中斷伺服器主機連線", client_ip)
+        log_event.insert_log("ERROR", existing_user, None, "websocket_connect_error", f"WebSocket 錯誤. {e}", client_ip)
     finally:
         # 移除斷開的連接
-        if websocket:
-            await websocket.close()
-            log_event.insert_log("WARN", existing_user, None, "websocket_close", "Websocket執行關閉", client_ip)
-        connected_clients.pop(username, None)
+        try:
+            if websocket:
+                log_event.insert_log("WARN", existing_user, None, "websocket_closed", "WebSocket 已執行關閉", client_ip)
+                await websocket.close()
+        except Exception as e:
+            pass
+        finally:
+            removed_client = connected_clients.pop(username, None)
+            if removed_client:
+                log_event.insert_log("DEBUG", existing_user, None, "client_removed", f"連線記錄已清理", client_ip)
 
 def heartbeat_process(username, message):
     try:
