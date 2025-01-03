@@ -110,36 +110,56 @@ class WebSocketClient:
             write_log("與 WebSocket 伺服器的連線已結束")
 
     async def on_message(self, websocket, message):
-        if message == "pong":
+        try:
+            message = json.loads(message)
+        except json.JSONDecodeError:
+            print(f"無效的 JSON 消息: {message}")
+            return
+
+        print(f"來自伺服器的訊息: {message}")
+        if message['type'] == "pong":
             self.last_message_time = time.time()
             self.retryCount = 0
             return
 
         write_log(f"來自伺服器的訊息: {message}")
-        if message == "close_vmware_workstation":
-            manage.close_vmware_workstation()
-            await websocket.send(f"{USER_NAME}: close_vmware_workstation 執行完畢")
 
-        elif message == "restart_computer":
-            manage.restart_computer()
-            await websocket.send(f"{USER_NAME}: restart_computer 執行完畢")
-
-        elif message == "shutdown_computer":
-            manage.shutdown_computer()
-            await websocket.send(f"{USER_NAME}: shutdown_computer 執行完畢")
-
-        elif message == "close_chrome":
-            manage.close_chrome()
-            await websocket.send(f"{USER_NAME}: close_chrome 執行完畢")
-        
-        elif message == "usernotregistered":
+        if message['type'] == 'usernotregistered':
             write_log("收到 usernotregistered 訊息，停止服務並退出程序。")
             self.running = False
             await websocket.close()
             write_log("WebSocket 連線已關閉，程序即將結束。")
+            return
 
-        else:
-            write_log(f"非指令訊息 {message}")
+        if message['type'] == 'operation':
+            await handle_operation(message, websocket)
+            return
+
+        if message['type'] == 'broadcast':
+            msg = message['msg']
+            return
+
+        write_log(f"非指令訊息 {message}")
+
+async def handle_operation(message, websocket):
+    operations = {
+        'close_vmware_workstation': manage.close_vmware_workstation,
+        'restart_computer': manage.restart_computer,
+        'shutdown_computer': manage.shutdown_computer,
+        'close_chrome': manage.close_chrome,
+    }
+
+    operation = message.get('operate')
+    if operation in operations:
+        operations[operation]()
+        await websocket.send(return_operation_result(f"{USER_NAME}: {operation} 執行完畢"))
+
+def return_operation_result(operate_msg):
+    msg = {
+        "type": "operate_result",
+        "operate_msg": operate_msg
+    }
+    return json.dumps(msg)
 
 async def main():
     client = WebSocketClient()
