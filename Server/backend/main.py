@@ -22,16 +22,16 @@ app = FastAPI()
 # uvicorn main:app --host 127.0.0.1 --port 2666 --reload
 # uvicorn main:app --host 192.168.0.106 --port 2666 --reload
 
-app.mount("/static", StaticFiles(directory="build/static"), name="static")
+# app.mount("/static", StaticFiles(directory="build/static"), name="static")
 
-@app.get("/")
-async def serve_root():
-    return FileResponse("build/index.html")
+# @app.get("/")
+# async def serve_root():
+#     return FileResponse("build/index.html")
 
-# 提供其他路径的文件，支持 React 的路由
-@app.get("/{path:path}")
-async def serve_other_paths(path: str):
-    return FileResponse("build/index.html")
+# # 提供其他路径的文件，支持 React 的路由
+# @app.get("/{path:path}")
+# async def serve_other_paths(path: str):
+#     return FileResponse("build/index.html")
 
 connected_clients = {}
 
@@ -335,8 +335,12 @@ async def oneclick_operation_process(request, user, operation):
         if not websocket:
             log_event.insert_log("WARN", user, None, "oneclick_operation", f"對全體成員進行 {operation} 時於用戶 {connected_clients[key]['username']} 連線錯誤！", get_client_ip(request))
             continue
-
-        await websocket.send_text(operation)
+        
+        ws_msg = json.dumps({
+            "type": "operation",
+            "operate": operation
+        })
+        await websocket.send_text(ws_msg)
     log_event.insert_log("INFO", user, None, "oneclick_operation", f"對全體成員進行了 {operation} 指令。", get_client_ip(request))
 
 @app.post("/oneclick_broadcast")
@@ -358,7 +362,12 @@ async def oneclick_broadcast(request: Request, body: requestClass.oneClickBroadc
             if not websocket:    
                 print(f"{user['nickname']}對全體成員廣播時於用戶 {connected_clients[key]['username']} 連線錯誤！")
                 log_event.insert_log("WARN", user, None, "oneclick_operation", f"對全體成員廣播時於用戶 {connected_clients[key]['username']} 連線錯誤！", get_client_ip(request))
-            await websocket.send_text(content)
+
+            ws_msg = json.dumps({
+                'type': 'broadcast',
+                'msg': content
+            })
+            await websocket.send_text(ws_msg)
 
             result = {
                 'code': 0,
@@ -438,7 +447,12 @@ async def api(request: Request, body: requestClass.ApiRequest):
         try:
             msg = content.get("msg")
             websocket = connected_clients[username]['websocket']
-            await websocket.send_text(msg)
+
+            ws_msg = json.dumps({
+                'type': 'broadcast',
+                'msg': msg
+            })
+            await websocket.send_text(ws_msg)
             return JSONResponse(content={"status": "success", "message": f"{msg} 已傳送至 {username}"})
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"傳送 {method} 指令失敗: {str(e)}")
@@ -452,7 +466,11 @@ async def api(request: Request, body: requestClass.ApiRequest):
 
         try:
             websocket = connected_clients[username]['websocket']
-            await websocket.send_text(method)
+            ws_msg = json.dumps({
+                "type": "operation",
+                "operate": method
+            })
+            await websocket.send_text(ws_msg)
             log_event.insert_log("INFO", user, db['Users'].find_one({"nickname": username}), "operation_command", f"對[{username}]使用{method}指令成功", get_client_ip(request))
             return JSONResponse(content={"status": "success", "message": f"{method} 已傳送至 {username}"})
         except Exception as e:
@@ -470,7 +488,12 @@ async def websocket_endpoint(websocket: WebSocket, username: str, version: str):
 
     if not existing_user:
         await websocket.accept()
-        await websocket.send_text("usernotregistered")
+        
+        ws_msg = json.dumps({
+            'type': 'usernotregistered'
+        })
+        await websocket.send_text(ws_msg)
+
         print(f"用戶 {username} 未註冊, 已拒絕連線.")
         await websocket.close()
         return
@@ -507,7 +530,9 @@ async def websocket_endpoint(websocket: WebSocket, username: str, version: str):
                 continue
 
             if message['type'] == "heartbeat":
-                heartbeat_process(websocket, username, message)
+                await heartbeat_process(websocket, username, message)
+            if message['type'] == "operate_result":
+                print(message['operate_msg'])
 
     except WebSocketDisconnect:
         print(f"用戶 {username} 已斷開連線.")
@@ -539,7 +564,11 @@ async def heartbeat_process(websocket, username, message):
             {"nickname": username},
             {"$inc": {"heartbeatCount": 1}}
         )
-        await websocket.send_text("pong")
+
+        ws_msg = json.dumps({
+            "type": "pong"
+        })
+        await websocket.send_text(ws_msg)
     except Exception as e:
         print(f"Heartbeat 處理錯誤. 來自 {username}: {e}")
 
