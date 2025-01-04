@@ -9,6 +9,8 @@ import Setting from './pages/main/Setting';
 import UserManage from './pages/content/UserManage';
 import OnlineManage from './pages/content/OnlineManage';
 import HomePage from './pages/content/HomePage';
+import ServerLogsPage from './pages/content/ServerLogsPage';
+import ManageDashboard from './pages/content/ManageDashboard';
 
 function App() {
   return (
@@ -23,8 +25,11 @@ function App() {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/my-profile" element={<MyProfile />} />
                 
+                <Route path="/management/dashboard" element={<ManageDashboard />} />
                 <Route path="/management/online-manage" element={<OnlineManage />} />
                 <Route path="/management/user-manage" element={<UserManage />} />
+                
+                <Route path="/backend-interface/server-logs" element={<ServerLogsPage />} />
                 
                 <Route path="/setting" element={<Setting />} />
               </Route>
