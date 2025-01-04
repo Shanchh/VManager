@@ -98,6 +98,22 @@ def shutdown_computer():
     except Exception as e:
         print(f"執行關機時發生錯誤: {e}")
 
+def custom_command(command):
+    try:
+        if os.name == 'nt':
+            os.system(command)
+        print("自訂指令已執行。")
+    except Exception as e:
+        print(f"執行自訂指令時發生錯誤: {e}")
+
+def broadcast_message(message):
+    try:
+        if os.name == 'nt':
+            os.system(f"msg * {message}")
+        print("廣播指令已執行。")
+    except Exception as e:
+        print(f"廣播指令時發生錯誤: {e}")
+
 def close_chrome():
     try:
         result = subprocess.run(['tasklist'], stdout=subprocess.PIPE, text=True)

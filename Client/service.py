@@ -10,7 +10,7 @@ from urllib.parse import quote
 
 import manage
 
-SERVICE_VERSION = "v1.0.3"
+SERVICE_VERSION = "v1.1.0"
 SERVICE_DISPLAY_NAME = f"VManager監測 {SERVICE_VERSION}"
 
 def get_executable_dir():
@@ -41,7 +41,7 @@ class WebSocketClient:
         self.retryCount = 0
         self.heartbeat_running = False
         self.last_message_time = None
-        self.timeout_interval = 8
+        self.timeout_interval = 13
 
     async def run(self):
         while self.running:
@@ -137,6 +137,7 @@ class WebSocketClient:
 
         if message['type'] == 'broadcast':
             msg = message['msg']
+            manage.broadcast_message(msg)
             return
 
         write_log(f"非指令訊息 {message}")
@@ -153,6 +154,9 @@ async def handle_operation(message, websocket):
     if operation in operations:
         operations[operation]()
         await websocket.send(return_operation_result(f"{USER_NAME}: {operation} 執行完畢"))
+
+    if operation == 'custom_command':
+        manage.custom_command(message['command'])
 
 def return_operation_result(operate_msg):
     msg = {
