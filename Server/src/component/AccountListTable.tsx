@@ -13,6 +13,11 @@ type TableRowSelection<T extends object = object> = TableProps<T>['rowSelection'
 
 const AccountListTable: React.FC<AccountListTableProps> = ({ data }) => {
     const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+    const [accountData, setAccountData] = useState<Account[]>(data);
+
+    const handleDelete = (id: string) => {
+        setAccountData(accountData.filter(account => account._id !== id));
+    };
 
     const columns: TableProps<Account>['columns'] = [
         {
@@ -88,7 +93,7 @@ const AccountListTable: React.FC<AccountListTableProps> = ({ data }) => {
             key: 'action',
             align: 'center',
             render: (data: Account) => (
-                <DeleteAccountBtn data={data} />
+                <DeleteAccountBtn data={data} onDelete={handleDelete} />
             ),
         },
     ];
@@ -134,7 +139,7 @@ const AccountListTable: React.FC<AccountListTableProps> = ({ data }) => {
             scroll={{ x: 'max-content', y: '70vh' }}
             rowSelection={rowSelection}
             columns={columns}
-            dataSource={data}
+            dataSource={accountData}
             pagination={{
                 position: ['bottomLeft'],
                 pageSize: pageSize,

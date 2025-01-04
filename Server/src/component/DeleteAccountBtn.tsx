@@ -6,9 +6,10 @@ import { delete_account } from '../api/ProcessApi';
 
 interface DeleteAccountBtnProps {
     data: Account;
+    onDelete: (id: string) => void;
 }
 
-const DeleteAccountBtn: React.FC<DeleteAccountBtnProps> = ({ data }) => {
+const DeleteAccountBtn: React.FC<DeleteAccountBtnProps> = ({ data, onDelete }) => {
     const [modalOpen, setModalOpen] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
     const [passwordInput, setPasswordInput] = useState<string>('');
@@ -29,6 +30,7 @@ const DeleteAccountBtn: React.FC<DeleteAccountBtnProps> = ({ data }) => {
             const r = await delete_account(command);
             message.success(`刪除帳號成功！${data.nickname}`);
             await navigator.clipboard.writeText(r.VMword);
+            onDelete(data._id);
         } catch (error: any) {
             console.error(error);
             message.error("刪除失敗！");
