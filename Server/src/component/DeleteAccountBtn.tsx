@@ -70,7 +70,7 @@ const DeleteAccountBtn: React.FC<DeleteAccountBtnProps> = ({ data, onDelete }) =
                 ></Input.Password>
                 <Flex justify='flex-end' gap={5} style={{ paddingTop: 10 }}>
                     <Button color="primary" variant="solid" style={{ fontSize: 16 }} loading={loading} onClick={() => deleteAccount()}>
-                        創建
+                        送出
                     </Button>
                     <Button color="default" variant="outlined" style={{ fontSize: 16 }} onClick={() => setModalOpen(false)}>
                         取消

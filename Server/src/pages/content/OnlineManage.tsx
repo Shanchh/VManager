@@ -16,6 +16,7 @@ const OnlineManage = () => {
     const [sorterType, setSorterType] = useState('none');
     const [sorterValue, setSorterValue] = useState('none');
     const [filteredData, setFilteredData] = useState<Client[]>([]);
+    const [searchRole, setSearchRole] = useState<string>("all");
 
     const NoneSorterOption = [
         { value: 'none', label: '選擇排序方式' }
@@ -40,6 +41,8 @@ const OnlineManage = () => {
     const onResetSearch = () => {
         setSorterType('none');
         setSorterValue('none');
+        setSearchRole("all");
+        setFilteredData(connectedListData);
     }
 
     const selectOption = [
@@ -73,13 +76,13 @@ const OnlineManage = () => {
     ];
 
     const onFinish = (values: any) => {
-        const { type, nickname, ip, VMstatus } = values;
+        const { nickname, ip, VMstatus } = values;
 
         const filtered = connectedListData.filter((item) => {
             const matchType =
-                type === 'all' ||
-                (type === 'all-admin' && all_admin_role.includes(item.role || '')) ||
-                item.role === type;
+                searchRole === 'all' ||
+                (searchRole === 'all-admin' && all_admin_role.includes(item.role || '')) ||
+                item.role === searchRole;
 
             const matchNickname = nickname ? item.username.includes(nickname) : true;
             const matchIp = ip ? item.ip.includes(ip) : true;
@@ -119,14 +122,25 @@ const OnlineManage = () => {
                 >
                     <Row justify="start" gutter={18}>
                         <Col>
-                            <Form.Item name="type" initialValue={'all'}>
+                            <Form.Item>
                                 <Flex justify="start" align="center" gap={5}>
                                     <h3>身分類型：</h3>
-                                    <Radio.Group defaultValue="all">
-                                        <Radio.Button value="all">全選</Radio.Button>
-                                        <Radio.Button value="user">員工</Radio.Button>
-                                        <Radio.Button value="all-admin">管理員</Radio.Button>
-                                    </Radio.Group>
+                                    <Select
+                                        size="middle"
+                                        style={{ width: 180 }}
+                                        value={searchRole}
+                                        onChange={(value) => setSearchRole(value)}
+                                        defaultValue={"all"}
+                                        options={[
+                                            { value: 'all', label: '全選' },
+                                            { value: 'all-admin', label: '管理員' },
+                                            { value: 'administrative', label: '行政' },
+                                            { value: 'list', label: '名單部' },
+                                            { value: 'oldSales', label: '回客' },
+                                            { value: 'newSales', label: '新客' },
+                                            { value: 'user', label: '員工' },
+                                        ]}
+                                    />
                                 </Flex>
                             </Form.Item>
                         </Col>

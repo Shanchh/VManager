@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Request
 from config.setting import db
 import utils.auth as auth
 from datetime import datetime, timedelta
+from bson import ObjectId
 
 from utils import requestClass, log_event, firebaseConfig, get_client_ip
 
@@ -158,3 +159,37 @@ async def get_average_daily_count(request: Request):
         return result
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"取得每日平均上限裝置數時發生錯誤, {e}")
+    
+@app.post("/modify_user_role")
+@auth.login_required
+async def modify_user_role(request: Request, body: requestClass.modifyRoleClass):
+    try:
+        user = auth.get_current_user(request)
+        current_user = db['Users'].find_one({"email": user.email})
+
+        if current_user['role'] not in admin_permissions:
+            raise HTTPException(status_code=400, detail="Insufficient account permissions")
+
+        role = body.role
+        objId = body.objId
+
+        target_user = db['Users'].find_one({"_id": ObjectId(objId)})
+        if not target_user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        update_result = db['Users'].update_one(
+            {"_id": ObjectId(objId)},
+            {"$set": {"role": role}}
+        )
+
+        if update_result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Failed to update user role")
+
+        result = {
+            "code": 0,
+            "message": f"User role updated successfully to {role}"
+        }
+
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"修改用戶身分組時發生錯誤, {e}")

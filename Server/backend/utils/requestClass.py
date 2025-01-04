@@ -27,3 +27,7 @@ class deleteAccountClass(BaseModel):
     
 class getServerLogs(BaseModel):
     level: str
+
+class modifyRoleClass(BaseModel):
+    role: str
+    objId: str

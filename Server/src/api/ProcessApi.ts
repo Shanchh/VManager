@@ -146,3 +146,14 @@ export const get_average_daily_count = async () => {
         throw err;
     }
 }
+
+export const modify_user_role = async (command: any) => {
+    try {
+        const res = await axios.post("/modify_user_role", command);
+        return res.data.message;
+    }
+    catch (err) {
+        apiError(err)
+        throw err;
+    }
+}

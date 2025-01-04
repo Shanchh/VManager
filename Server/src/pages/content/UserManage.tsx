@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Account } from '../../../type'
 import { get_all_account_data } from '../../api/ProcessApi';
 import { ReloadOutlined, UserOutlined, MailOutlined, SearchOutlined } from '@ant-design/icons';
-import { Button, Col, Flex, Row, Spin, Form, Radio, Input, DatePicker } from 'antd';
+import { Button, Col, Flex, Row, Spin, Form, Radio, Input, DatePicker, Select } from 'antd';
 import AccountListTable from '../../component/AccountListTable';
 
 type Filter = {
@@ -18,6 +18,7 @@ const UserManage = () => {
     const [accountListData, setAccountListData] = useState<Account[]>([]);
     const [filteredData, setFilteredData] = useState<Account[]>([]);
     const [searchLoading, setSearchLoading] = useState<boolean>(false);
+    const [searchRole, setSearchRole] = useState<string>("all");
 
     const { RangePicker } = DatePicker;
 
@@ -29,18 +30,37 @@ const UserManage = () => {
         setTableLoading(false);
     }
 
+    const handleDelete = (id: string) => {
+        setFilteredData(filteredData.filter(account => account._id !== id));
+    };
+
+    const handleModifyRole = (id: string, newRole: string) => {
+        setFilteredData(filteredData.map(account => {
+            if (account._id === id) {
+                return { ...account, role: newRole };
+            }
+            return account;
+        }));
+    };
+
     useEffect(() => {
         refreshData();
     }, []);
 
     const all_admin_role = ['admin', 'owner'];
 
+    const clearSearch = () => {
+        setSearchRole("all");
+        setFilteredData(accountListData);
+    };
+
     const onFinish = (values: Filter) => {
+        console.log(values);
         setSearchLoading(true);
-        const { type, nickname, email, createDate, VMIsCreate } = values;
+        const { nickname, email, createDate, VMIsCreate } = values;
 
         const filtered = accountListData.filter((item) => {
-            const matchType = type === 'all' || type === 'all-admin' && all_admin_role.includes(item.role) || type === item.role;
+            const matchType = searchRole === 'all' || (searchRole === 'all-admin' && all_admin_role.includes(item.role)) || searchRole === item.role;
             const matchNickname = nickname ? item.nickname.includes(nickname) : true;
             const matchEmail = email ? item.email.includes(email) : true;
 
@@ -71,14 +91,25 @@ const UserManage = () => {
                 >
                     <Row justify="start" gutter={18}>
                         <Col>
-                            <Form.Item name="type" initialValue={'all'}>
+                            <Form.Item>
                                 <Flex justify="start" align="center" gap={5}>
                                     <h3>身分類型：</h3>
-                                    <Radio.Group defaultValue="all">
-                                        <Radio.Button value="all">全選</Radio.Button>
-                                        <Radio.Button value="user">員工</Radio.Button>
-                                        <Radio.Button value="all-admin">管理員</Radio.Button>
-                                    </Radio.Group>
+                                    <Select
+                                        size="middle"
+                                        style={{ width: 180 }}
+                                        value={searchRole}
+                                        onChange={(value) => setSearchRole(value)}
+                                        defaultValue={"all"}
+                                        options={[
+                                            { value: 'all', label: '全選' },
+                                            { value: 'all-admin', label: '管理員' },
+                                            { value: 'administrative', label: '行政' },
+                                            { value: 'list', label: '名單部' },
+                                            { value: 'oldSales', label: '回客' },
+                                            { value: 'newSales', label: '新客' },
+                                            { value: 'user', label: '員工' },
+                                        ]}
+                                    />
                                 </Flex>
                             </Form.Item>
                         </Col>
@@ -123,7 +154,7 @@ const UserManage = () => {
                         <Button htmlType="submit" type="primary" icon={<SearchOutlined />} loading={searchLoading}>
                             條件查詢
                         </Button>
-                        <Button htmlType="reset" type="default">
+                        <Button htmlType="reset" type="default" onClick={() => clearSearch()}>
                             清除條件
                         </Button>
                     </Flex>
@@ -137,7 +168,7 @@ const UserManage = () => {
                         <Spin size="large" />
                     </Flex>
                 ) : (
-                    <AccountListTable data={filteredData}></AccountListTable>
+                    <AccountListTable data={filteredData} onDelete={handleDelete} onModifyRole={handleModifyRole}></AccountListTable>
                 )}
             </Flex>
         </Flex>
