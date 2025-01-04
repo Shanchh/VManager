@@ -1,6 +1,6 @@
 from fastapi import Request, Depends, HTTPException
 from functools import wraps
-from firebaseConfig import db, auth
+from .firebaseConfig import db, auth
 from firebase_admin._user_mgt import UserRecord
 
 def get_token_with_headers(request: Request) -> str:

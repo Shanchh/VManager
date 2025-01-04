@@ -6,7 +6,6 @@ from datetime import datetime
 
 log_debug_switch = True
 
-
 def insert_log(level: string, requester_data: dict, recipient_data: Optional[dict], action: string, message: string, ipAddress: string):
     try:
         if not log_debug_switch:
