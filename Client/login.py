@@ -10,6 +10,7 @@ from datetime import datetime
 from filelock import FileLock, Timeout
 import getpass
 import sys
+from collections import Counter
 
 FIREBASE_API_KEY = "AIzaSyABKsYLS-KImX4S1TvM_vYoyAIFyrENnr4"
 
@@ -49,7 +50,13 @@ class Client:
         self.vmrun_path = vmrun_path
         self.vmx_path = vmx_path
 
-    def login_VM(self):
+    def login_VM(self, hwnd):
+        counter = Counter(hwnd)
+        most_common = counter.most_common(1)
+        value, count = most_common[0]
+
+        self.hwnd = int(value)
+
         self.start_vm()
         self.auto_login_with_pyautogui()
 
@@ -70,22 +77,29 @@ class Client:
 
             print("自動輸入密碼中...")
             # pyautogui.hotkey('shift')
-            hwnd = get_active_window_hwnd()
+
             for index in self.VMword:
-                win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-                win32gui.SetForegroundWindow(hwnd)
+                focus_window(self.hwnd)
                 pyautogui.typewrite(index)
             
             pyautogui.press("enter")
             print(f"{get_time_now()}密碼輸入成功！")
         except Exception as e:
-            print(f"{get_time_now()}自動輸入密碼失敗：{e}")
+            print(f"{get_time_now()}自動輸入密碼失敗，請重新執行程式")
 
-def startLogin():
+def focus_window(hwnd):
+    win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+    win32gui.SetForegroundWindow(hwnd)
+
+def startLogin(start_hwnd):
     try:
         while True:
+            hwnd = []
+            hwnd.append(start_hwnd)
             email = input(f"{get_time_now()}請輸入信箱：")
+            hwnd.append(get_active_window_hwnd())
             password = getpass.getpass(f"{get_time_now()}請輸入密碼：")
+            hwnd.append(get_active_window_hwnd())
 
             print(f"{get_time_now()}登入中請稍後....")
 
@@ -101,8 +115,8 @@ def startLogin():
             if response.status_code == 200:
                 data = response.json()
                 id_token = data["idToken"]
-                if postLogin(email, id_token):
-                    print(f"{get_time_now()}登入成功！程式即將結束。")
+                if postLogin(email, id_token, hwnd):
+                    print(f"{get_time_now()}程式即將結束。")
                     sys.exit(0)
             else:
                 error_info = response.json().get("error", {}).get("message", "Unknown error")
@@ -112,7 +126,7 @@ def startLogin():
         print(f"{get_time_now()}登入時發生錯誤, Error:{e}")
         return
 
-def postLogin(email, id_token, max_retries=10):
+def postLogin(email, id_token, hwnd, max_retries=10):
     retry_count = 0
     while retry_count < max_retries:
         response = requests.post(f"{SERVER_URL}/login", json={"username": USER_NAME, "email": email, "password": id_token})
@@ -120,7 +134,7 @@ def postLogin(email, id_token, max_retries=10):
             data = response.json()
             if data.get("status") == "success":
                 client = Client(data['VMword'], VMRUN_PATH, VMX_PATH)
-                client.login_VM()
+                client.login_VM(hwnd)
                 return True
             else:
                 print(f"{get_time_now()}密碼錯誤！\n━")
@@ -138,7 +152,7 @@ def postLogin(email, id_token, max_retries=10):
     print(f"{get_time_now()}登入重試次數已達上限 ({max_retries})\n━")
     return False
 
-def main():
+def main(start_hwnd):
     lock = FileLock(lockfile) # 檔案鎖
     try:
         lock.acquire(timeout=1)
@@ -149,9 +163,10 @@ def main():
 
     try:
         print_welcome()
-        startLogin()
+        startLogin(start_hwnd)
     finally:
         lock.release()
 
 if __name__ == "__main__":
-    main()
+    start_hwnd = get_active_window_hwnd()
+    main(start_hwnd)

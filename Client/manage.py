@@ -60,18 +60,19 @@ def kill_process_by_name(process_name):
         print(f"無法關閉進程: {e}")
 
 def close_vmware_workstation():
-    try:
-        # 使用 taskkill 關閉 VMware Workstation 主程序
-        subprocess.run(["taskkill", "/F", "/IM", "vmware.exe"], check=True)
-        print("VMware Workstation 主程序已關閉。")
+    if count_virtual_machine_processes() >= 1:
+        try:
+            # 使用 taskkill 關閉 VMware Workstation 主程序
+            subprocess.run(["taskkill", "/F", "/IM", "vmware.exe"], check=True)
+            print("VMware Workstation 主程序已關閉。")
 
-        # 使用 taskkill 關閉所有 VMware 虛擬機進程
-        subprocess.run(["taskkill", "/F", "/IM", "vmware-vmx.exe"], check=True)
-        print("所有 VMware 虛擬機進程已關閉。")
-    except subprocess.CalledProcessError as e:
-        print(f"關閉 VMware 進程時發生錯誤: {e}")
-    except Exception as ex:
-        print(f"發生未知錯誤: {ex}")
+            # 使用 taskkill 關閉所有 VMware 虛擬機進程
+            subprocess.run(["taskkill", "/F", "/IM", "vmware-vmx.exe"], check=True)
+            print("所有 VMware 虛擬機進程已關閉。")
+        except subprocess.CalledProcessError as e:
+            print(f"關閉 VMware 進程時發生錯誤: {e}")
+        except Exception as ex:
+            print(f"發生未知錯誤: {ex}")
 
 def restart_computer():
     try:
@@ -96,6 +97,22 @@ def shutdown_computer():
         print("關機命令已執行。")
     except Exception as e:
         print(f"執行關機時發生錯誤: {e}")
+
+def custom_command(command):
+    try:
+        if os.name == 'nt':
+            os.system(command)
+        print("自訂指令已執行。")
+    except Exception as e:
+        print(f"執行自訂指令時發生錯誤: {e}")
+
+def broadcast_message(message):
+    try:
+        if os.name == 'nt':
+            os.system(f"msg * {message}")
+        print("廣播指令已執行。")
+    except Exception as e:
+        print(f"廣播指令時發生錯誤: {e}")
 
 def close_chrome():
     try:
