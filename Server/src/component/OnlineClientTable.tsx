@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import { Client } from '../types/type';
-import { Badge, Table, Tag, type TableProps } from 'antd';
+import { Badge, Table, type TableProps } from 'antd';
 import OnlineClientOperate from './OnlineClientOperate';
+import UserRoleTag from './UserRoleTag';
 
 interface OnlineClientTableProps {
     data: Client[];
@@ -11,12 +12,6 @@ type TableRowSelection<T extends object = object> = TableProps<T>['rowSelection'
 
 const OnlineClientTable: React.FC<OnlineClientTableProps> = ({ data }) => {
     const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-
-    const roleMap: Record<string, { color: string; label: string }> = {
-        user: { color: "#efb01d", label: "員工" },
-        admin: { color: "#b22222", label: "管理員" },
-        owner: { color: "#40e0d0", label: "管理員" },
-    };
 
     const onSelectChange = (newSelectedRowKeys: React.Key[]) => {
         setSelectedRowKeys(newSelectedRowKeys);
@@ -54,14 +49,9 @@ const OnlineClientTable: React.FC<OnlineClientTableProps> = ({ data }) => {
         {
             title: '身分組',
             key: 'role',
-            dataIndex: 'role',
             align: 'center',
-            render: (role: string) => {
-                const roleInfo = roleMap[role];
-                if (roleInfo) {
-                    return <Tag color={roleInfo.color}>{roleInfo.label}</Tag>;
-                }
-                return "Error";
+            render: (data: Client) => {
+                return <UserRoleTag role={data.role}/>
             },
         },
         {

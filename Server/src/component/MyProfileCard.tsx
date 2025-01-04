@@ -3,6 +3,7 @@ import React from 'react'
 import { CalendarOutlined, SafetyCertificateOutlined, UserOutlined, DesktopOutlined, HeartOutlined } from '@ant-design/icons';
 import { Account } from '../../type';
 import RegisterVmBtn from './RegisterVmBtn';
+import UserRoleTag from './UserRoleTag';
 
 interface MyProfileCardProps {
     profile: Account | null;
@@ -10,19 +11,6 @@ interface MyProfileCardProps {
 }
 
 const MyProfileCard: React.FC<MyProfileCardProps> = ({ profile, refreshData }) => {
-    const roleMap: Record<string, { color: string; label: string }> = {
-        user: { color: '#efb01d', label: '員工' },
-        admin: { color: '#b22222', label: '管理員' },
-        owner: { color: '#40e0d0', label: '管理員' },
-    };
-
-    const RoleTag = ({ role }: { role: string | undefined }) => {
-        if (!role) return null;
-
-        const roleInfo = roleMap[role] || { color: 'gray', label: '未知角色' };
-        return <Tag color={roleInfo.color}>{roleInfo.label}</Tag>;
-    };
-
     const VMcreate = ({ isCreate }: { isCreate: boolean | undefined }) => {
         if (isCreate === undefined) return null;
 
@@ -67,7 +55,7 @@ const MyProfileCard: React.FC<MyProfileCardProps> = ({ profile, refreshData }) =
                 <Flex vertical gap={5} style={{ width: '100%', paddingTop: 25 }}>
                     <div style={{ fontSize: 16 }}>
                         <SafetyCertificateOutlined style={{ paddingRight: 8 }} />
-                        <RoleTag role={profile?.role} />
+                        <UserRoleTag role={profile?.role} />
                     </div>
 
                     <div style={{ fontSize: 16 }}>

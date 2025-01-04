@@ -1,8 +1,9 @@
-import { Badge, Button, Flex, Popconfirm, Table, Tag } from 'antd';
+import { Badge, Table } from 'antd';
 import React, { useState } from 'react';
 import type { TableProps } from 'antd';
 import { Account } from '../../type';
 import DeleteAccountBtn from './DeleteAccountBtn';
+import UserRoleTag from './UserRoleTag';
 
 interface AccountListTableProps {
     data: Account[];
@@ -12,12 +13,6 @@ type TableRowSelection<T extends object = object> = TableProps<T>['rowSelection'
 
 const AccountListTable: React.FC<AccountListTableProps> = ({ data }) => {
     const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-
-    const roleMap: Record<string, { color: string; label: string }> = {
-        user: { color: "#efb01d", label: "員工" },
-        admin: { color: "#b22222", label: "管理員" },
-        owner: { color: "#40e0d0", label: "管理員" },
-    };
 
     const columns: TableProps<Account>['columns'] = [
         {
@@ -29,14 +24,9 @@ const AccountListTable: React.FC<AccountListTableProps> = ({ data }) => {
         {
             title: '身分組',
             key: 'role',
-            dataIndex: 'role',
             align: 'center',
-            render: (role: string) => {
-                const roleInfo = roleMap[role];
-                if (roleInfo) {
-                    return <Tag color={roleInfo.color}>{roleInfo.label}</Tag>;
-                }
-                return "Error";
+            render: (data: Account) => {
+                return <UserRoleTag role={data.role} />
             },
         },
         {
@@ -98,7 +88,7 @@ const AccountListTable: React.FC<AccountListTableProps> = ({ data }) => {
             key: 'action',
             align: 'center',
             render: (data: Account) => (
-                <DeleteAccountBtn data={data}/>
+                <DeleteAccountBtn data={data} />
             ),
         },
     ];
