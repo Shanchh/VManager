@@ -1,6 +1,6 @@
 import React from 'react'
 import { Menu } from 'antd';
-import { BugOutlined, SettingOutlined, UserOutlined, SolutionOutlined, WifiOutlined, CloudServerOutlined } from '@ant-design/icons';
+import { BugOutlined, SettingOutlined, UserOutlined, SolutionOutlined, WifiOutlined, CloudServerOutlined, LockOutlined, DashboardOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from '../../auth/AuthProvider';
@@ -24,6 +24,7 @@ const OptionList = () => {
                 icon: <BugOutlined />,
                 label: '管理功能',
                 children: [
+                    { key: '/management/dashboard', label: '儀表板', icon: <DashboardOutlined />, onClick: () => navigate("/management/dashboard") },
                     { key: '/management/online-manage', label: '線上裝置管理', icon: <WifiOutlined />, onClick: () => navigate("/management/online-manage") },
                     { key: '/management/user-manage', label: '帳號管理', icon: <SolutionOutlined />, onClick: () => navigate("/management/user-manage") },
                 ],
@@ -31,10 +32,12 @@ const OptionList = () => {
         ] : []),
         ...(userProfile?.role === 'owner' ? [
             {
-                key: '/server-logs',
-                icon: <CloudServerOutlined />,
-                label: '後臺日誌',
-                onClick: () => navigate("/server-logs"),
+                key: '/backend-interface',
+                icon: <LockOutlined />,
+                label: '後臺功能',
+                children: [
+                    { key: '/backend-interface/server-logs', label: '運行日誌', icon: <CloudServerOutlined />, onClick: () => navigate("/backend-interface/server-logs") },
+                ],
             },
         ] : []),
         {

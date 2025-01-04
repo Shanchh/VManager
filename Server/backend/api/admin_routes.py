@@ -1,12 +1,13 @@
 from fastapi import APIRouter, HTTPException, Request
 from config.setting import db
 import utils.auth as auth
+from datetime import datetime, timedelta
 
 from utils import requestClass, log_event, firebaseConfig, get_client_ip
 
 app = APIRouter()
 
-admin_permissions = ['admin', 'onwer']
+admin_permissions = ['admin', 'owner']
 
 @app.post("/get_all_account_data")
 @auth.login_required
@@ -96,3 +97,64 @@ async def delete_account(request: Request, body: requestClass.deleteAccountClass
     except Exception as e:
         log_event.insert_log("ERROR", user, None, "oneclick_operation", f"刪除 {account['nickname']} 帳號時發生錯誤！", get_client_ip(request))
         raise HTTPException(status_code=400, detail=f"刪除帳號時發生錯誤！, {e}")
+    
+@app.post("/get_average_daily_count")
+@auth.login_required
+async def get_average_daily_count(request: Request):
+    try:
+        user = auth.get_current_user(request)
+
+        user = db['Users'].find_one({"email": user.email})
+
+        if user['role'] not in admin_permissions:
+            raise HTTPException(status_code=400, detail="Insufficient account permissions")
+        
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=10)
+
+        pipeline = [
+            {
+                "$match": {
+                    "timestamp": {"$gte": start_date, "$lte": end_date}
+                }
+            },
+            {
+                "$group": {
+                    "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$timestamp"}},
+                    "average_online_count": {"$avg": "$online_count"}
+                }
+            },
+            {
+                "$sort": {"_id": 1}
+            }
+        ]
+
+        result = list(db['OnlineStats'].aggregate(pipeline))
+
+        daily_averages = [
+            {
+                "date": item["_id"],
+                "average_online_count": round(item["average_online_count"], 2)
+            }
+            for item in result
+        ]
+
+        all_dates = [(start_date + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(10)]
+        final_result = [
+            {
+                "date": date,
+                "average_online_count": next(
+                    (item["average_online_count"] for item in daily_averages if item["date"] == date), 0
+                )
+            }
+            for date in all_dates
+        ]
+
+        result = {
+            "code": 0,
+            "message": final_result
+        }
+
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"取得每日平均上限裝置數時發生錯誤, {e}")

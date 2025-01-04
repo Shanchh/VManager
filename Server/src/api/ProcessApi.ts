@@ -135,3 +135,14 @@ export const get_server_logs = async (level: string) => {
         throw err;
     }
 }
+
+export const get_average_daily_count = async () => {
+    try {
+        const res = await axios.post("/get_average_daily_count");
+        return res.data.message;
+    }
+    catch (err) {
+        apiError(err)
+        throw err;
+    }
+}

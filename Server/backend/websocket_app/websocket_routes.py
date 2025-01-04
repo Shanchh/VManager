@@ -7,11 +7,9 @@ import utils.auth as auth
 from urllib.parse import unquote
 from datetime import datetime
 
-from utils import requestClass, log_event, get_client_ip
+from utils import requestClass, log_event, get_client_ip, connected_clients
 
 app = APIRouter()
-
-connected_clients = {}
 
 @app.post("/list_connected")
 @auth.login_required

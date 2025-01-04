@@ -27,9 +27,6 @@ const MyProfile = () => {
         <Col>
           <Flex vertical gap={10} style={{ paddingBottom: 10 }}>
             <MyProfileCard profile={profile} refreshData={refreshData} />
-            {userProfile?.role === 'admin' || userProfile?.role === 'owner' ? (
-              <QuickActionsCard />
-            ) : null}
           </Flex>
         </Col>
         <Col>
