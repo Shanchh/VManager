@@ -7,10 +7,11 @@ import asyncio
 import websockets
 from datetime import datetime
 from urllib.parse import quote
+import subprocess
 
 import manage
 
-SERVICE_VERSION = "v1.1.0"
+SERVICE_VERSION = "v1.1.1"
 SERVICE_DISPLAY_NAME = f"VManager監測 {SERVICE_VERSION}"
 
 def get_executable_dir():
@@ -145,6 +146,26 @@ class WebSocketClient:
             msg = message['msg']
             manage.broadcast_message(msg)
             return
+        
+        if message['type'] == 'update':
+            try:
+                write_log("收到更新指令，啟動更新流程...")
+                
+                updater_path = os.path.join(get_executable_dir(), "updater.exe")
+                if not os.path.exists(updater_path):
+                    write_log(f"更新程式 {updater_path} 不存在，無法啟動更新流程！")
+                    return
+                
+                subprocess.Popen([updater_path], shell=True)
+                write_log(f"成功啟動更新程式 {updater_path}")
+                
+                self.running = False
+                await websocket.close()
+                write_log("WebSocket 已關閉，服務即將退出以便進行更新。")
+                return
+            except Exception as e:
+                write_log(f"啟動更新流程時發生錯誤：{e}")
+                return
 
         write_log(f"非指令訊息 {message}")
 
