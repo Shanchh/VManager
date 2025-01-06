@@ -80,7 +80,7 @@ class WebSocketClient:
                 while True:
                     await asyncio.sleep(1)
                     if self.last_message_time and (time.time() - self.last_message_time > self.timeout_interval):
-                        write_log("超過 8 秒未收到訊息，將重新連接 WebSocket")
+                        write_log("超過 13 秒未收到訊息，將重新連接 WebSocket")
                         await websocket.close()
                         break
             except asyncio.CancelledError:
@@ -100,6 +100,12 @@ class WebSocketClient:
         except Exception as e:
             write_log(f"WebSocket 錯誤: {e}")
         finally:
+            try:
+                if websocket:
+                    await websocket.close()
+            except Exception as e:
+                pass
+            
             heartbeat_task.cancel()
             timeout_task.cancel()
             try:
