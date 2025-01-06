@@ -4,6 +4,7 @@ import { ReloadOutlined, UserOutlined, SearchOutlined, DesktopOutlined } from '@
 import { Button, Flex, Spin, Form, Row, Col, Radio, Input, Select } from 'antd';
 import { list_connected } from '../../api/ProcessApi';
 import OnlineClientTable from '../../component/OnlineClientTable';
+import CustomCommandBtn from '../../component/CustomCommandBtn';
 
 type SelectOption = {
     value: string;
@@ -209,13 +210,19 @@ const OnlineManage = () => {
                     </Flex>
                 </Form>
 
-                <Flex justify='flex-start' align='center' gap={5} style={{ width: '100%' }}>
-                    <Button color="default" variant="outlined" icon={<ReloadOutlined />} onClick={() => refreshData()}>刷新表格</Button>
-                    <div style={{ fontSize: 18 }}>
-                        <UserOutlined />
-                        {connectedListData.length}
-                    </div>
+                <Flex style={{ width: '100%' }}>
+                    <Flex justify='flex-start' align='center' gap={5} style={{ width: '50%' }}>
+                        <Button color="default" variant="outlined" icon={<ReloadOutlined />} onClick={() => refreshData()}>刷新表格</Button>
+                        <div style={{ fontSize: 18 }}>
+                            <UserOutlined />
+                            {connectedListData.length}
+                        </div>
+                    </Flex>
+                    <Flex justify='flex-end' align='center' gap={5} style={{ width: '50%' }}>
+                        <CustomCommandBtn connectedListData={connectedListData}/>
+                    </Flex>
                 </Flex>
+
                 {tableLoading ? (
                     <Flex justify='center' align='center' style={{ height: '50vh' }}>
                         <Spin size="large" />

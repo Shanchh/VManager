@@ -200,6 +200,36 @@ async def api(request: Request, body: requestClass.ApiRequest):
 
     else:
         raise HTTPException(status_code=400, detail="無效Method.")
+    
+@app.post("/post_custom_command")
+@auth.login_required
+async def post_custom_command(request: Request, body: requestClass.customCommand):
+    user = auth.get_current_user(request)
+
+    collection = db['Users']
+    user = collection.find_one({"email": user.email})
+
+    if user['role'] not in ['admin', 'owner']:
+        raise HTTPException(status_code=400, detail="Insufficient account permissions")
+    
+    username = body.selectedValue
+    command = body.command
+
+    if username not in connected_clients:
+        raise HTTPException(status_code=404, detail=f"使用者ID無效 [{username}]")
+    
+    log_event.insert_log("INFO", user, db['Users'].find_one({"nickname": username}), "custom_operation_command", f"使用了調適功能", get_client_ip(request))
+    try:
+        websocket = connected_clients[username]['websocket']
+        ws_msg = json.dumps({
+            "type": "operation",
+            "operate": "custom_command",
+            "command": command
+        })
+        await websocket.send_text(ws_msg)
+        return JSONResponse(content={"status": "success", "message": f"自訂指令已傳送至 {username}"})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"傳送自訂指令失敗: {str(e)}") 
 
 @app.websocket("/websocket/{username}/{version}")
 async def websocket_endpoint(websocket: WebSocket, username: str, version: str):

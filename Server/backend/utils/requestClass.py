@@ -31,3 +31,7 @@ class getServerLogs(BaseModel):
 class modifyRoleClass(BaseModel):
     role: str
     objId: str
+
+class customCommand(BaseModel):
+    selectedValue: str
+    command: str
