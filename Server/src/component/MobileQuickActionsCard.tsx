@@ -1,4 +1,4 @@
-import { Button, Card, Flex } from 'antd'
+import { Card, Flex } from 'antd'
 import React from 'react'
 import { ThunderboltOutlined } from '@ant-design/icons';
 import OneClickOperationBtn from './OneClickOperationBtn';
@@ -16,6 +16,7 @@ const MobileQuickActionsCard = () => {
                     <OneClickOperationBtn operate='restart_computer' content='重新啟動' />
                     <OneClickOperationBtn operate='close_vmware_workstation' content='關閉虛擬機' />
                     <OneClickOperationBtn operate='close_chrome' content='關閉Chrome' />
+                    <OneClickBroadcastBtn />
                 </Flex>
             </Card>
         </Flex>

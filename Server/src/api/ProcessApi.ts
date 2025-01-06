@@ -157,3 +157,14 @@ export const modify_user_role = async (command: any) => {
         throw err;
     }
 }
+
+export const post_custom_command = async (command: any) => {
+    try {
+        const res = await axios.post("/post_custom_command", command);
+        return res.data.message;
+    }
+    catch (err) {
+        apiError(err)
+        throw err;
+    }
+}

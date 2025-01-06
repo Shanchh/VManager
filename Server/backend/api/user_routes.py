@@ -49,7 +49,7 @@ async def get_my_20_activities(request: Request):
         user = db['Users'].find_one({"email": user.email})
 
         collection = db['Logs']
-        logs = list(collection.find({"requester.id": str(user['_id'])}).sort("timestamp", -1).limit(9))
+        logs = list(collection.find({"requester.id": str(user['_id']), "level": "INFO"}).sort("timestamp", -1).limit(9))
 
         for log in logs:
             log['_id'] = str(log['_id'])
