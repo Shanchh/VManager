@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { ExclamationCircleOutlined, SlackOutlined } from '@ant-design/icons';
 import { Client } from '../types/type';
 import { post_custom_command } from '../api/ProcessApi';
+import TextArea from 'antd/es/input/TextArea';
 
 interface CustomCommandBtnProps {
     connectedListData: Client[];
@@ -96,7 +97,7 @@ const CustomCommandBtn: React.FC<CustomCommandBtnProps> = ({ connectedListData }
                     </div>
                 }
                 open={modal2Open}
-                width={300}
+                width={500}
                 onCancel={() => setModal2Open(false)}
                 footer={null}
             >
@@ -104,7 +105,7 @@ const CustomCommandBtn: React.FC<CustomCommandBtnProps> = ({ connectedListData }
                     <Flex align='center'>
                         <div style={{ fontSize: 15, fontWeight: 'bold' }}>對象：</div>
                         <Select
-                            style={{ width: 200 }}
+                            style={{ width: 400 }}
                             showSearch placeholder='請選擇對象'
                             options={selectOption}
                             onChange={(value) => setSelectedValue(value)}
@@ -116,7 +117,7 @@ const CustomCommandBtn: React.FC<CustomCommandBtnProps> = ({ connectedListData }
                     </Flex>
                     <Flex align='center'>
                         <div style={{ fontSize: 15, fontWeight: 'bold' }}>指令：</div>
-                        <Input style={{ width: 200 }} placeholder='輸入指令' value={command} onChange={(e) => setCommand(e.target.value)}></Input>
+                        <TextArea rows={5} style={{ width: 400 }} placeholder='輸入指令' value={command} onChange={(e) => setCommand(e.target.value)}></TextArea>
                     </Flex>
                 </Flex>
                 <Flex justify='flex-end' gap={5} style={{ paddingTop: 10 }}>
