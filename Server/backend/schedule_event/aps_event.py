@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 from config.setting import db
+import random
+import time
 
 from utils import connected_clients
 
@@ -7,8 +9,13 @@ collection = db["OnlineStats"]
 
 def record_online_users():
     try:
+        time.sleep(random.randint(1, 10))
+
         current_time = datetime.now()
         online_count = len(connected_clients)
+        if online_count == 0:
+            record_online_users()
+            return
         
         existing_record = collection.find_one({
             "timestamp": {
