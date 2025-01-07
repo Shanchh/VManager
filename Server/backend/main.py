@@ -14,16 +14,16 @@ app = FastAPI()
 # uvicorn main:app --host 127.0.0.1 --port 2666 --reload
 # uvicorn main:app --host 192.168.0.106 --port 2666 --reload
 
-app.mount("/static", StaticFiles(directory="build/static"), name="static")
+# app.mount("/static", StaticFiles(directory="build/static"), name="static")
 
-@app.get("/")
-async def serve_root():
-    return FileResponse("build/index.html")
+# @app.get("/")
+# async def serve_root():
+#     return FileResponse("build/index.html")
 
-# 提供其他路径的文件，支持 React 的路由
-@app.get("/{path:path}")
-async def serve_other_paths(path: str):
-    return FileResponse("build/index.html")
+# # 提供其他路径的文件，支持 React 的路由
+# @app.get("/{path:path}")
+# async def serve_other_paths(path: str):
+#     return FileResponse("build/index.html")
 
 UPLOAD_FOLDER = "./uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)

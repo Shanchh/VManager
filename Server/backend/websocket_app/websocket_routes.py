@@ -230,6 +230,32 @@ async def post_custom_command(request: Request, body: requestClass.customCommand
         return JSONResponse(content={"status": "success", "message": f"自訂指令已傳送至 {username}"})
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"傳送自訂指令失敗: {str(e)}") 
+      
+@app.post("/call_update_client")
+@auth.login_required
+async def call_update_client(request: Request, body: requestClass.callUpdate):
+    try:
+        user = auth.get_current_user(request)
+
+        collection = db['Users']
+        user = collection.find_one({"email": user.email})
+
+        if user['role'] not in ['admin', 'owner']:
+            raise HTTPException(status_code=400, detail="Insufficient account permissions")
+        
+        username = body.username
+
+        if username not in connected_clients:
+            raise HTTPException(status_code=404, detail=f"使用者ID無效 [{username}]")
+
+        websocket = connected_clients[username]['websocket']
+        ws_msg = json.dumps({
+            "type": "update"
+        })
+        await websocket.send_text(ws_msg)
+        return JSONResponse(content={"status": "success", "message": f"更新客戶端指令已傳送"})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"更新客戶端指令傳送失敗: {str(e)}") 
 
 @app.websocket("/websocket/{username}/{version}")
 async def websocket_endpoint(websocket: WebSocket, username: str, version: str):
