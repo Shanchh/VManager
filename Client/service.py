@@ -7,10 +7,11 @@ import asyncio
 import websockets
 from datetime import datetime
 from urllib.parse import quote
+import subprocess
 
 import manage
 
-SERVICE_VERSION = "v1.1.0"
+SERVICE_VERSION = "v1.1.2"
 SERVICE_DISPLAY_NAME = f"VManager監測 {SERVICE_VERSION}"
 
 def get_executable_dir():
@@ -80,7 +81,7 @@ class WebSocketClient:
                 while True:
                     await asyncio.sleep(1)
                     if self.last_message_time and (time.time() - self.last_message_time > self.timeout_interval):
-                        write_log("超過 8 秒未收到訊息，將重新連接 WebSocket")
+                        write_log("超過 13 秒未收到訊息，將重新連接 WebSocket")
                         await websocket.close()
                         break
             except asyncio.CancelledError:
@@ -100,6 +101,12 @@ class WebSocketClient:
         except Exception as e:
             write_log(f"WebSocket 錯誤: {e}")
         finally:
+            try:
+                if websocket:
+                    await websocket.close()
+            except Exception as e:
+                pass
+            
             heartbeat_task.cancel()
             timeout_task.cancel()
             try:
@@ -139,6 +146,23 @@ class WebSocketClient:
             msg = message['msg']
             manage.broadcast_message(msg)
             return
+        
+        if message['type'] == 'update':
+            try:
+                write_log("收到更新指令，啟動更新流程...")
+                
+                updater_path = os.path.join(get_executable_dir(), "updater.exe")
+                if not os.path.exists(updater_path):
+                    write_log(f"更新程式 {updater_path} 不存在，無法啟動更新流程！")
+                    return
+                
+                subprocess.Popen([updater_path], shell=True)
+                write_log(f"成功啟動更新程式 {updater_path}")
+                write_log("WebSocket 已關閉，服務即將退出以便進行更新。")
+                return
+            except Exception as e:
+                write_log(f"啟動更新流程時發生錯誤：{e}")
+                return
 
         write_log(f"非指令訊息 {message}")
 
