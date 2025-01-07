@@ -26,9 +26,10 @@ def write_log(msg):
 
 def download_update():
     try:
+        service_path = os.path.join(get_executable_dir(), "service.exe")
         response = requests.post(UPDATE_URL, stream=True)
         if response.status_code == 200:
-            with open("service.exe", "wb") as f:
+            with open(service_path, "wb") as f:
                 for chunk in response.iter_content(chunk_size=1024):
                     f.write(chunk)
             write_log("Updater: 檔案下載完成，已保存為 service.exe")

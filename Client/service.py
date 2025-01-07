@@ -11,7 +11,7 @@ import subprocess
 
 import manage
 
-SERVICE_VERSION = "v1.1.1"
+SERVICE_VERSION = "v1.1.2"
 SERVICE_DISPLAY_NAME = f"VManager監測 {SERVICE_VERSION}"
 
 def get_executable_dir():
