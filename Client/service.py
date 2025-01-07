@@ -158,9 +158,6 @@ class WebSocketClient:
                 
                 subprocess.Popen([updater_path], shell=True)
                 write_log(f"成功啟動更新程式 {updater_path}")
-                
-                self.running = False
-                await websocket.close()
                 write_log("WebSocket 已關閉，服務即將退出以便進行更新。")
                 return
             except Exception as e:
