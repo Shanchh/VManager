@@ -168,3 +168,14 @@ export const post_custom_command = async (command: any) => {
         throw err;
     }
 }
+
+export const call_update_client = async (command: any) => {
+    try {
+        const res = await axios.post("/call_update_client", command);
+        return res.data.message;
+    }
+    catch (err) {
+        apiError(err)
+        throw err;
+    }
+}

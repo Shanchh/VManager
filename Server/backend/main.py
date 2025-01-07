@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 import uvicorn
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
+import os
 
 from api import auth_handler, user_routes, admin_routes
 from websocket_app import websocket_routes
@@ -23,6 +24,17 @@ app = FastAPI()
 # @app.get("/{path:path}")
 # async def serve_other_paths(path: str):
 #     return FileResponse("build/index.html")
+
+UPLOAD_FOLDER = "./uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+@app.post("/download/{filename}")
+def download_file(filename: str):
+    file_path = os.path.join(UPLOAD_FOLDER, filename)
+    if os.path.exists(file_path):
+        return FileResponse(file_path, media_type="application/zip", filename=filename)
+    else:
+        return {"error": f"File {filename} not found"}
 
 app.include_router(admin_routes.app, tags=["AdminApi"])
 app.include_router(user_routes.app, tags=["UserApi"])

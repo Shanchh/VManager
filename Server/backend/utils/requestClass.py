@@ -35,3 +35,6 @@ class modifyRoleClass(BaseModel):
 class customCommand(BaseModel):
     selectedValue: str
     command: str
+
+class callUpdate(BaseModel):
+    username: str
