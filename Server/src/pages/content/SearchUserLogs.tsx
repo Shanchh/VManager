@@ -19,6 +19,8 @@ const SearchUserLogs = () => {
     const [logCountData, setLogCountData] = useState([]);
     const [logData, setLogData] = useState([]);
 
+    const [loading, setLoading] = useState<boolean>(false);
+
     const convertToOptions = (Account: Account[]) => {
         return Account.map((Account) => ({
             value: Account._id,
@@ -34,6 +36,7 @@ const SearchUserLogs = () => {
 
     const refreshUserData = async () => {
         try {
+            setLoading(true);
             const data = await get_all_account_data();
             await submitLogSearch();
             const options = convertToOptions(data);
@@ -48,6 +51,7 @@ const SearchUserLogs = () => {
     }, []);
 
     const submitLogSearch = async () => {
+        setLoading(true);
         try {
             const command1 = {
                 date: selectedDate,
@@ -64,6 +68,9 @@ const SearchUserLogs = () => {
             setLogCountData(log_counts_data);
         } catch (error) {
             message.error('獲取數據失敗');
+            
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -119,7 +126,7 @@ const SearchUserLogs = () => {
                         </Flex>
 
                         <Flex justify='end' align='center' style={{ flex: 1 }}>
-                            <Button color="primary" variant="outlined" onClick={() => submitLogSearch()}>送出查詢</Button>
+                            <Button color="primary" variant="outlined" onClick={() => submitLogSearch()} loading={loading}>送出查詢</Button>
                         </Flex>
                     </Flex>
                 </Card>
