@@ -179,3 +179,25 @@ export const call_update_client = async (command: any) => {
         throw err;
     }
 }
+
+export const get_user_log_counts_data = async (command: any) => {
+    try {
+        const res = await axios.post("/get_user_log_counts_data", command);
+        return res.data.data;
+    }
+    catch (err) {
+        apiError(err)
+        throw err;
+    }
+}
+
+export const get_user_log_data = async (command: any) => {
+    try {
+        const res = await axios.post("/get_user_log_data", command);
+        return res.data.data;
+    }
+    catch (err) {
+        apiError(err)
+        throw err;
+    }
+}

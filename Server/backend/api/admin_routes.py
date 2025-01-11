@@ -64,6 +64,109 @@ async def get_server_info_logs(request: Request, body: requestClass.getServerLog
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"取得日誌時發生錯誤, {e}")
     
+@app.post("/get_user_log_data")
+@auth.login_required
+async def get_user_log_data(request: Request, body: requestClass.getUserLogs):
+    try:
+        user = auth.get_current_user(request)
+
+        user = db['Users'].find_one({"email": user.email})
+
+        if user['role'] not in ['owner']:
+            raise HTTPException(status_code=400, detail="Insufficient account permissions")
+        
+        date = body.date
+        userId = body.userId
+        logType = body.logType
+
+        start_date = datetime(date.year, date.month, date.day)
+        end_date = start_date + timedelta(days=1)
+
+        match_condition = {
+            "timestamp": {"$gte": start_date, "$lt": end_date}
+        }
+
+        if userId != "all":
+            match_condition["requester.id"] = userId
+        if logType != "all":
+            match_condition["level"] = logType
+
+        collection = db['Logs']
+        log_data = list(collection.find(match_condition))
+
+        for log in log_data:
+            log['_id'] = str(log['_id'])
+
+        result = {
+            "code": 0,
+            "message": "logs",
+            "data": log_data
+        }
+
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"取得日誌時發生錯誤, {e}")
+    
+@app.post("/get_user_log_counts_data")
+@auth.login_required
+async def get_user_log_counts_data(request: Request, body: requestClass.getLogCount):
+    try:
+        user = auth.get_current_user(request)
+        user = db['Users'].find_one({"email": user.email})
+
+        if not user or user['role'] not in ['owner']:
+            raise HTTPException(status_code=400, detail="Insufficient account permissions")
+        
+        date = body.date
+        userId = body.userId
+        
+        start_date = date - timedelta(days=10)
+        end_date = date
+        
+        match_condition = {
+            "timestamp": {"$gte": start_date, "$lte": end_date},
+            "level": {"$in": ["INFO", "WARN", "ERROR", "DEBUG"]}
+        }
+
+        if userId != "all":
+            match_condition["requester.id"] = userId
+
+        collection = db['Logs']
+        pipeline = [
+            {"$match": match_condition},
+            {
+                "$group": {
+                    "_id": {
+                        "level": "$level",
+                        "date": {"$dateToString": {"format": "%Y-%m-%d", "date": "$timestamp"}}
+                    },
+                    "count": {"$sum": 1}
+                }
+            },
+            {"$sort": {"_id.date": 1}}
+        ]
+
+        logs = list(collection.aggregate(pipeline))
+        
+        result_data = [
+            {
+                "category": log["_id"]["level"],
+                "value": log["count"],
+                "time": log["_id"]["date"]
+            }
+            for log in logs
+        ]
+
+        result = {
+            "code": 0,
+            "message": "logs",
+            "data": result_data
+        }
+
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"取得日誌數量時發生錯誤, {e}")
+    
 @app.post("/delete_account")
 @auth.login_required
 async def delete_account(request: Request, body: requestClass.deleteAccountClass):

@@ -11,6 +11,7 @@ const breadcrumbNameMap: Record<string, string> = {
     "/management/online-manage": "線上裝置管理",
     "/backend-interface": "後臺功能",
     "/backend-interface/server-logs": "運行日誌",
+    "/backend-interface/search-user-logs": "查詢用戶日誌",
     "/setting": "設定",
 };
 
