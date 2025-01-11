@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from datetime import datetime
 
 class RegisterRequest(BaseModel):
     username: str
@@ -38,3 +39,12 @@ class customCommand(BaseModel):
 
 class callUpdate(BaseModel):
     username: str
+
+class getLogCount(BaseModel):
+    date: datetime
+    userId: str
+
+class getUserLogs(BaseModel):
+    date: datetime
+    userId: str
+    logType: str

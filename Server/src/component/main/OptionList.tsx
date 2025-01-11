@@ -1,6 +1,6 @@
 import React from 'react'
 import { Menu } from 'antd';
-import { BugOutlined, SettingOutlined, UserOutlined, SolutionOutlined, WifiOutlined, CloudServerOutlined, LockOutlined, DashboardOutlined } from '@ant-design/icons';
+import { BugOutlined, SettingOutlined, UserOutlined, SolutionOutlined, WifiOutlined, CloudServerOutlined, LockOutlined, DashboardOutlined, DatabaseOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from '../../auth/AuthProvider';
@@ -36,7 +36,8 @@ const OptionList = () => {
                 icon: <LockOutlined />,
                 label: '後臺功能',
                 children: [
-                    { key: '/backend-interface/server-logs', label: '運行日誌', icon: <CloudServerOutlined />, onClick: () => navigate("/backend-interface/server-logs") },
+                    { key: '/backend-interface/server-logs', label: '運行日誌', icon: <DatabaseOutlined />, onClick: () => navigate("/backend-interface/server-logs") },
+                    { key: '/backend-interface/search-user-logs', label: '查詢用戶日誌', icon: <CloudServerOutlined />, onClick: () => navigate("/backend-interface/search-user-logs") },
                 ],
             },
         ] : []),

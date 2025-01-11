@@ -7,3 +7,9 @@ export type Client = {
     ip: string
     role?: string;
 }
+
+export interface LogCountData {
+    category: "INFO" | "WARN" | "ERROR" | "DEBUG";
+    value: number,
+    time: string,
+}

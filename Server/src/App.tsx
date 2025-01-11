@@ -11,6 +11,7 @@ import OnlineManage from './pages/content/OnlineManage';
 import HomePage from './pages/content/HomePage';
 import ServerLogsPage from './pages/content/ServerLogsPage';
 import ManageDashboard from './pages/content/ManageDashboard';
+import SearchUserLogs from './pages/content/SearchUserLogs';
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
                 <Route path="/management/user-manage" element={<UserManage />} />
                 
                 <Route path="/backend-interface/server-logs" element={<ServerLogsPage />} />
+                <Route path="/backend-interface/search-user-logs" element={<SearchUserLogs />} />
                 
                 <Route path="/setting" element={<Setting />} />
               </Route>
