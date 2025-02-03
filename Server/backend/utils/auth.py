@@ -17,7 +17,7 @@ def get_current_user(request: Request) -> UserRecord:
     """獲取當前User"""
     try:
         token = get_token_with_headers(request)
-        result = auth.verify_id_token(token)
+        result = auth.verify_id_token(token, clock_skew_seconds=60)
         return auth.get_user(result["user_id"])
     except Exception:
         return None
